@@ -1,2 +1,4 @@
 /.project
 /.pydevproject
+/dist
+/yawd_elfinder.egg-info
