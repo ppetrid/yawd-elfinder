@@ -121,7 +121,7 @@
 		
 		var fileurl = file.url
 				? file.url
-				: file.rootUrl + '/' + file.path.split(file.separator).slice(1).join('/')
+				: file.rootUrl.replace(/\/$/,'') + '/' + file.path.split(file.separator).slice(1).join('/')
 
 		var table = $('<table class="elfinder-info-tb"><tbody/></table>')
 			.append('<tr><td>' + this.options.keywords.size + ':</td><td>' + elFinder.prototype.formatSize(file.size) + '</td></tr>')
