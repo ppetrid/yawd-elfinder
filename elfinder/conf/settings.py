@@ -4,18 +4,18 @@ from elfinder.utils.accesscontrol import elFinderTestACL
 from elfinder.volumes.filesystem import ElfinderVolumeLocalFileSystem
 
 ELFINDER_JS_URLS = {
-    'jquery' : '//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
-    'jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/jquery-ui.min.js',
-    'elfinder' : '%selfinder/js/elfinder.full.js' % settings.STATIC_URL
+    'a_jquery' : '//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
+    'b_jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/jquery-ui.min.js',
+    'c_elfinder' : '%selfinder/js/elfinder.full.js' % settings.STATIC_URL
 }
-#allow overriding any key in project settings file   
+#allow to override any key in the project settings file   
 ELFINDER_JS_URLS.update(getattr(settings, 'ELFINDER_JS_URLS', {}))
 
 ELFINDER_CSS_URLS = {
-    'jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/themes/smoothness/jquery-ui.css',
-    'elfinder' : '%selfinder/css/elfinder.min.css' % settings.STATIC_URL
+    'a_jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/themes/smoothness/jquery-ui.css',
+    'b_elfinder' : '%selfinder/css/elfinder.min.css' % settings.STATIC_URL
 }
-#allow overriding any key in project settings file   
+#allow to override any key in the project settings file   
 ELFINDER_CSS_URLS.update(getattr(settings, 'ELFINDER_CSS_URLS', {}))
 
 ELFINDER_WIDGET_JS_URL = '%sjs/jquery.elfinder-widget.full.js' % settings.STATIC_URL

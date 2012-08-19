@@ -24,8 +24,9 @@ class ElfinderWidget(forms.HiddenInput):
         """
         Set the widget's javascript and css
         """
-        return forms.Media(css= {'screen': ls.ELFINDER_CSS_URLS.values() + [ls.ELFINDER_WIDGET_CSS_URL]}, 
-            js = ls.ELFINDER_JS_URLS.values() + [ls.ELFINDER_WIDGET_JS_URL])
+        print [ls.ELFINDER_CSS_URLS[x] for x in sorted(ls.ELFINDER_CSS_URLS)]
+        return forms.Media(css= {'screen': [ls.ELFINDER_CSS_URLS[x] for x in sorted(ls.ELFINDER_CSS_URLS)] + [ls.ELFINDER_WIDGET_CSS_URL]}, 
+            js = [ls.ELFINDER_JS_URLS[x] for x in sorted(ls.ELFINDER_JS_URLS)] + [ls.ELFINDER_WIDGET_JS_URL])
     media = property(_media)
     
     def render(self, name, value, attrs=None):
