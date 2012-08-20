@@ -1,0 +1,18 @@
+<!DOCTYPE html >
+<html>
+	<header>
+		<title>yawd-elfinder example page</title>
+	</header>
+	<body>
+		<div style="margin:auto; width: 960px;">
+		<div style="float:left; margin:0 30px 0 0;">
+			<img src="{{object.image.url}}" alt="My alt text" width="250"/>
+		</div>
+		<div style="float:left; width:600px;">
+			<h1>{{object.name}}</h1>
+			{{object.content|safe}}
+			<p><a href="{{object.anyfile.url}}" target="_blank">File attachment!</a></p>
+		</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,12 @@
+[
+    {
+        "pk": 1, 
+        "model": "test_app.yawdelfindertestmodel", 
+        "fields": {
+            "content": "<p>The Hammond organ is an electric organ invented by Laurens Hammond in 1934 and manufactured by the Hammond Organ Company. While the Hammond organ was originally sold to churches as a lower-cost alternative to the wind-driven pipe organ, in the 1960s and 1970s it became a standard keyboard instrument for jazz, blues, rock, church and gospel music.</p><p>\r\nThe original Hammond organ used additive synthesis of waveforms from harmonic series made by mechanical tonewheels that rotate in front of electromagnetic pickups. The component waveform ratios are mixed by sliding drawbars mounted above the two keyboards. Although many different models of Hammond organs were produced, the Hammond B-3 organ is most well known. In the late 1960s and throughout the 1970s the distinctive sound of the B-3 organ (often played through a Leslie speaker) was widely used in blues, progressive rock bands and blues-rock groups. The last electromechanical Hammond organ came off the assembly line in the mid-1970s.</p>", 
+            "image": "llffim_aGFtbW9uZF9iMy5qcGc", 
+            "anyfile": "llff_SGFtbW9uZE9yZ2FuLnBkZg", 
+            "name": "Hammond History"
+        }
+    }
+]
