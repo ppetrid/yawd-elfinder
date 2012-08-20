@@ -16,14 +16,21 @@ In future release we plan to implement an FTP volume driver.
 
 .. _elfinder: http://elfinder.org
 
+Screenshots
+===========
+
+The admin widget
+
 .. image:: http://static.yawd.eu/www/yawd-elfinder-widget.jpg
+
+Elfinder in action
 
 .. image:: http://static.yawd.eu/www/yawd-elfinder-rotate.jpg
 
 Dependencies
 ============
 
-yawd-elfinder is tested under Django 1.4. The PIL image library is also needed
+yawd-elfinder is tested under Django 1.4. The `PIL`_ image library is needed
 for on-the-fly image manipulation. `python-magic`_ must also be installed - this
 is used for mime type detection. Since yawd-elfinder deals with "expensive"
 file operations (it reads a lot from  the disk!), the application uses 
@@ -31,3 +38,4 @@ django's caching framework to speed things up; therefore, using a django
 cache backend is recommended but not required.
 
 .. _python-magic: https://github.com/ahupp/python-magic/
+.. _PIL: http://www.pythonware.com/products/pil/
