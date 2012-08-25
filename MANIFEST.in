@@ -1,4 +1,2 @@
 include LICENSE
-recursively-include elfinder *
-prune elfinder/test-media
-exclude elfinder/tests*
+recursive-include elfinder *

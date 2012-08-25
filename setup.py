@@ -4,9 +4,10 @@ import elfinder
 
 setup(
       name='yawd-elfinder',
+      url='http://www.yawd.eu/content/articles/3/12/yawd-elfinder/',
       version = elfinder.__version__,
       description='Elfinder-based file management solution for Django',
-      author='Yawd',
+      author='yawd',
       author_email='info@yawd.eu',
       packages=find_packages(),
       license='BSD',
@@ -19,5 +20,11 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries'
-        ]
+        ],
+      include_package_data = True,
+      install_requires = [
+        "Django >= 1.4",
+        "PIL",
+        "python-magic"
+        ],
 )
