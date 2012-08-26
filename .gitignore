@@ -3,3 +3,4 @@
 /dist
 /yawd_elfinder.egg-info
 /.settings
+/tests

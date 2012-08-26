@@ -5,10 +5,11 @@ yawd-elfinder, a file management solution for Django
 uploading, moving, renaming files etc-, as well as a set of advanced features
 such as image resizing/cropping/rotation and archive file creation.
 
-yawd-elfinder provides a fully-featured python/django implementation for the 
+**yawd-elfinder** provides a fully-featured python/django implementation for the 
 elfinder connector v.2. A custom Model Field (tied to a nice form widget) 
-is also provided. Therefore, you can manage your files through the Django admin 
-interface and assign them to fields, all at once.
+is also provided. Therefore, you can easily manage your files 
+through the Django admin interface, assign them to model fields and access
+the file URLs in your Django templates.
 
 The implementation follows the original PHP connector logic; you have full 
 control over the allowed mime types, hidding/locking specific folders etc. 
@@ -27,15 +28,8 @@ Elfinder in action
 
 .. image:: http://static.yawd.eu/www/yawd-elfinder-rotate.jpg
 
-Dependencies
-============
+Usage and demo
+==============
 
-yawd-elfinder is tested under Django 1.4. The `PIL`_ image library is needed
-for on-the-fly image manipulation. `python-magic`_ must also be installed - this
-is used for mime type detection. Since yawd-elfinder deals with "expensive"
-file operations (it reads a lot from  the disk!), the application uses 
-django's caching framework to speed things up; therefore, using a django
-cache backend is recommended but not required.
-
-.. _python-magic: https://github.com/ahupp/python-magic/
-.. _PIL: http://www.pythonware.com/products/pil/
+See the yawd-elfinder documentation for information on 
+how to install the demo and use yawd-elfinder. 
