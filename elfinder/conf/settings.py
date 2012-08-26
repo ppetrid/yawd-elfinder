@@ -82,11 +82,9 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #regexp against which new file names will be validated
                 #enable this to allow creating hidden files
                 #'acceptedName' : r'.*',
-                #callable to control files permissions
+                #callable to control file permissions
                 #`fs_standard_access` hides all files starting with .
                 'accessControl' : fs_standard_access,
-                #some data required by access control
-                #'accessControlData' : None,
                 #default permissions. not set hidden/locked here - take no effect
                 #'defaults' : {
                 #    'read' : True,
@@ -114,7 +112,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 'archivers' : {
                     #create archivers must be a dictionary containing a class implementing the open, add, close methods and the archiver's file extension
                     #they should operate like the python's built-in tarfile.TarFile classes
-                    #http://docs.python.org/library/zipfile.html
+                    #http://docs.python.org/library/tarfile.html
                     #'create' : { 'ext' : 'rar', 'archiver' : MyRarArchiver },
                     #extract archiver class must implement the open, extractall and close methods
                     #they should operate like python's built-in tarfile.TarFile classes

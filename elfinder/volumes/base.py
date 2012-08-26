@@ -126,7 +126,7 @@ class ElfinderVolumeDriver(object):
             'disabled' : [],
             #regexp or function name to validate new file name
             'acceptedName' : r'^[^\.].*', #<-- DONT touch this! Use constructor options to overwrite it!
-            #callable to control files permissions
+            #callable to control file permissions
             'accessControl' : None,
             #default permissions. not set hidden/locked here - take no effect
             'defaults' : {
@@ -138,7 +138,7 @@ class ElfinderVolumeDriver(object):
             #Allowed archive's mimetypes to create. Leave empty for all available types.
             'archiveMimes' : [],
             #Manual config for archivers. See example below. Leave empty for auto detect
-            'archivers' : [],
+            'archivers' : {},
         }
 
         #Defaults permissions
@@ -253,8 +253,8 @@ class ElfinderVolumeDriver(object):
 
         #default file attribute
         self._defaults = {
-            'read' : not not self._options['defaults']['read'] if 'read' in self._options['defaults'] else True,
-            'write' : not not self._options['defaults']['write'] if 'write' in self._options['defaults'] else True,
+            'read' : self._options['defaults']['read'] if 'read' in self._options['defaults'] else True,
+            'write' : self._options['defaults']['write'] if 'write' in self._options['defaults'] else True,
             'locked' : False,
             'hidden' : False
         }

@@ -3,6 +3,10 @@ from django.utils.translation import ugettext as _
 from exceptions import ElfinderErrorMessages, VolumeNotFoundError, DirNotFoundError, FileNotFoundError, NamedError, NotAnImageError
 
 class ElfinderConnector:
+    """
+    A python implementation of the 
+    `elfinder connector api v2.0  <https://github.com/Studio-42/elFinder/wiki/Client-Server-API-2.0>`_. At the moment, it supports all elfinder commands except from ``netDrivers``.
+    """
 
     _version = '2.0'
     _commit = 'b0144a0'
@@ -35,7 +39,6 @@ class ElfinderConnector:
     }
 
     def __init__(self, opts, session = None):
-        print 'Elfinder Connector init'
         self._volumes = {}
         self._default = None
         self._loaded = False
@@ -49,8 +52,8 @@ class ElfinderConnector:
         if not 'roots' in opts:
             opts['roots'] = []
         
-        for root in self.getNetVolumes():
-            opts['roots'].append(root)
+        #for root in self.getNetVolumes():
+        #    opts['roots'].append(root)
 
         for o in opts['roots']:
             class_ = o['driver'] if 'driver' in o else ''  
@@ -107,19 +110,18 @@ class ElfinderConnector:
         """
         return self._volume(hash_).realpath(hash_)
     
-    def getNetVolumes(self):
-        """
-        Return  network volumes config.
-        """
-        return self._session.get('elFinderNetVolumes', []) if  self._session else []
-    
-    
-    def setNetVolumes(self, volumes):
-        """
-        Save network volumes config.
-        """
-        self._session['elFinderNetVolumes'] = volumes
-    
+    #def getNetVolumes(self):
+    #    """
+    #    Return  network volumes config.
+    #    """
+    #    return self._session.get('elFinderNetVolumes', []) if  self._session else []
+        
+    #def setNetVolumes(self, volumes):
+    #    """
+    #    Save network volumes config.
+    #    """
+    #    self._session['elFinderNetVolumes'] = volumes
+
     def error(self, *args):
         """
         Normalize error messages
@@ -195,13 +197,15 @@ class ElfinderConnector:
 
     def open(self, target='', init=False, tree=False, debug=False):
         """
-        "Open" directory
-        Return array with following elements
-        - cwd          - opened dir info
-        - files        - opened dir content [and dirs tree if kwargs[tree]]
-        - api          - api version (if kwargs[init])
-        - uplMaxSize   - if kwargs[init]
-        - error        - on failed
+        **Command**: Open a directory
+        
+        Return:
+            An array with following elements:
+                :cwd:          opened directory information
+                :files:        opened directory content [and dirs tree if kwargs['tree'] is ``True``]
+                :api:          api version (if kwargs['init'] is ``True``)
+                :uplMaxSize:   The maximum allowed upload size (if kwargs['init'] is ``True``)
+                :error:        on failed
         """
         hash_ = 'default folder' if init else '#%s' % target
 
@@ -267,7 +271,7 @@ class ElfinderConnector:
 
     def ls(self, target, mimes=[], debug=False):
         """
-        Return dir files names list
+        **Command**: Return a directory's file list
         """
         try:
             return { 'list' : self._volume(target).ls(target) }
@@ -276,7 +280,7 @@ class ElfinderConnector:
 
     def tree(self, target, debug=False):
         """
-        Return subdirs for required directory
+        **Command**: Return subdirs for required directory
         """
         try:
             return { 'tree' : self._volume(target).tree(target) }
@@ -285,7 +289,7 @@ class ElfinderConnector:
     
     def parents(self, target, debug=False):
         """
-        Return parents dir for required directory
+        **Command**: Return parents dir for required directory
         """
         try:
             return {'tree' : self._volume(target).parents(target) }
@@ -294,7 +298,7 @@ class ElfinderConnector:
 
     def tmb(self, targets, debug=False):
         """
-        Return new created thumbnails list
+        **Command**: Return new automatically-created thumbnails list
         """
         result  = { 'images' : {} }
         for target in targets:
@@ -309,9 +313,13 @@ class ElfinderConnector:
     
     def file(self, target, request=None, download=False, debug=False):
         """
-        Required to output file in browser when volume URL is not set
-        Used to download the file as well 
-        Return array contains opened file pointer, root itself and required headers
+        **Command**: Get a file
+        
+        Required to output file in browser when volume URL is not set.
+        Used to download the file as well .
+        Return:
+            An array containing an opened file pointer, the root itself 
+            and the required response headers
         """
         try:
             volume = self._volume(target)
@@ -366,7 +374,7 @@ class ElfinderConnector:
 
     def size(self, targets, debug=False):
         """
-        Count total files size of targets
+        **Command**: Count total file size of all directories in ``targets``param.
         """
         size = 0
         
@@ -386,7 +394,7 @@ class ElfinderConnector:
 
     def mkdir(self, target, name, debug=False):
         """
-        Create directory
+        **Command**: Create a new directory
         """
         try:
             volume = self._volume(target)
@@ -402,7 +410,7 @@ class ElfinderConnector:
 
     def mkfile(self, target, name, mimes=[], debug=False):
         """
-        Create empty file
+        **Command**: Create a new, empty file.
         """
         try:
             volume = self._volume(target)
@@ -418,7 +426,7 @@ class ElfinderConnector:
 
     def rename(self, target, name, mimes=[], debug=False):
         """
-        Rename file
+        **Command**: Rename a file.
         """
         try:
             volume = self._volume(target)
@@ -436,7 +444,8 @@ class ElfinderConnector:
 
     def duplicate(self, targets, suffix='copy', debug=False):
         """
-        Duplicate file - create copy with "copy %d" suffix
+        **Command**: Duplicate a file. Create a copy with "{suffix} %d" suffix,
+        where "%d" is an integer and ``suffix`` an argument that defaults to `'copy`'.. 
         """
         result = { 'added' : [] }
         
@@ -457,7 +466,7 @@ class ElfinderConnector:
     
     def rm(self, targets, debug=False):
         """
-        Remove dirs/files
+        **Command**: Remove directories or files.
         """
         result  = {'removed' : []}
 
@@ -479,7 +488,7 @@ class ElfinderConnector:
     
     def upload(self, target, FILES, html=False, mimes=[], debug=False):
         """
-        Save uploaded files
+        **Command**: Save uploaded files.
         """
         header = { 'Content-Type' : 'text/html; charset=utf-8' } if html else {}
         result = { 'added' : [], 'header' : header }
@@ -509,7 +518,7 @@ class ElfinderConnector:
 
     def paste(self, targets, dst, cut=False, mimes=[], debug=False):
         """
-        Copy/move files into new destination
+        **Command**: Copy/move ``targets`` files into a new destination ``dst``.
         """
         error = ElfinderErrorMessages.ERROR_MOVE if cut else ElfinderErrorMessages.ERROR_COPY
         result = { 'added' : [], 'removed' : [] }
@@ -537,7 +546,7 @@ class ElfinderConnector:
 
     def get(self, target, debug=False):
         """
-        Return file content
+        **Command**: Return file contents
         """        
         try:
             volume = self._volume(target)
@@ -562,7 +571,7 @@ class ElfinderConnector:
 
     def put(self, target, content, mimes=[], debug=False):
         """
-        Save content into text file
+       **Command**:  Save ``content`` into a text file
         """
         try:
             volume = self._volume(target)
@@ -593,7 +602,8 @@ class ElfinderConnector:
 
     def archive(self, targets, type_, mimes=[], debug=False):
         """
-        Create archive
+        **Command**: Create a new archive file containing all files in
+        ``targets`` param.
         """
         #TODO: Mimes are currently not being used
         try:
@@ -608,7 +618,7 @@ class ElfinderConnector:
 
     def search(self, q, mimes=[], debug=False):
         """
-        Search files
+        **Command**: Search files for ``q``.
         """
         q = q.strip()
         result = []
@@ -618,7 +628,7 @@ class ElfinderConnector:
 
     def info(self, targets, options=False, debug=False):
         """
-        Return file info (used by client "places" ui)
+        **Command**: Return file info (used by client "places" ui)
         """
         files = []
         for hash_ in targets:
@@ -637,7 +647,7 @@ class ElfinderConnector:
 
     def dim(self, target, debug=False):
         """
-        Return image dimmensions
+        **Command**: Return image dimmensions
         """        
         try:
             return { 'dim' : self._volume(target).dimensions(target) }
@@ -646,7 +656,7 @@ class ElfinderConnector:
 
     def resize(self, target, width, height, mode=None, x='0', y='0', degree='0', debug=False):
         """
-        Resize image
+        **Command**: Resize ``target`` image
         """
         width, height, x, y, degree = int(width), int(height), int(x), int(y), int(degree)
         bg = ''
