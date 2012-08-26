@@ -32,4 +32,5 @@ Usage and demo
 ==============
 
 See the yawd-elfinder documentation for information on 
-how to install the demo and use yawd-elfinder. 
+`how to install the demo <http://yawd-elfinder.readthedocs.org/en/latest/installation.html#example-project>`_
+and `use yawd-elfinder <http://yawd-elfinder.readthedocs.org/en/latest/usage.html>`_. 
