@@ -434,7 +434,7 @@ viewing and deleting the directory), you could set this to::
    
 .. note::
 
-   Given a file, these rules override the :ref:`setting-default` permissions,  
+   Given a file, these rules override the :ref:`setting-defaults` permissions,  
    but are ignored if an :ref:`setting-accessControl` callable is set 
    and that callable returns ``True`` or ``False`` for defined properties 
    of the file.

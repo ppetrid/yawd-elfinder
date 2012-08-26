@@ -2,7 +2,7 @@
 Requirements
 ************
 
-yawd-elfinder needs the following packages to be included in your ``PYTHONPATH ``.
+yawd-elfinder needs the following packages to be included in your ``PYTHONPATH``.
 You don't have to manually install these packages; the setup script 
 checks for dependencies.  
 

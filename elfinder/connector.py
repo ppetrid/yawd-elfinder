@@ -316,10 +316,10 @@ class ElfinderConnector:
         **Command**: Get a file
         
         Required to output file in browser when volume URL is not set.
-        Used to download the file as well .
+        Used to download the file as well.
+        
         Return:
-            An array containing an opened file pointer, the root itself 
-            and the required response headers
+            An array containing an opened file pointer, the root itself and the required response headers
         """
         try:
             volume = self._volume(target)
@@ -374,7 +374,7 @@ class ElfinderConnector:
 
     def size(self, targets, debug=False):
         """
-        **Command**: Count total file size of all directories in ``targets``param.
+        **Command**: Count total file size of all directories in ``targets`` param.
         """
         size = 0
         
