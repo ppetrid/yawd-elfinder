@@ -1,6 +1,6 @@
 from os.path import join
 from django.conf import settings
-from elfinder.utils.accesscontrol import elFinderTestACL
+from elfinder.utils.accesscontrol import fs_standard_access
 from elfinder.volumes.filesystem import ElfinderVolumeLocalFileSystem
 
 ELFINDER_JS_URLS = {
@@ -25,7 +25,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
     #the default keywords demonstrates all possible configuration options
     #it allowes all file types, except from hidden files
     'default' : {
-        'debug' : True,
+        'debug' : False,
         'roots' : [ 
             #{
             #    'driver' : ElfinderVolumeLocalFileSystem,
@@ -39,7 +39,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #open this path on initial request instead of root path
                 #'startPath' : '',
                 'URL' : '%sfiles/' % settings.MEDIA_URL,
-                #how many subdirs levels return per request
+                #the depth of sub-directory listings that should return per request
                 #'treeDeep' : 1,
                 #directory separator. required by client to show paths correctly
                 #'separator' : os.sep,
@@ -47,11 +47,11 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #'tmbPath' : '.tmb',
                 #mode to create thumbnails dir
                 #'tmbPathMode' : 0777,
-                #thumbnails dir URL. Set it if store thumbnails outside root directory
+                #Thumbnails dir URL. Set this if you're storing thumbnails outside the root directory
                 #'tmbURL' : '',
-                #thumbnails size (px)
+                #Thumbnail size (in px)
                 #'tmbSize' : 48,
-                #thumbnails crop (True - crop, False - scale image to fit thumbnail size)
+                #Whether to crop (scale image to fit) thumbnails or not.
                 #'tmbCrop' : True,
                 #thumbnails background color (hex #rrggbb or 'transparent')
                 #'tmbBgColor' : '#ffffff',
@@ -62,7 +62,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #filter mime types to show
                 #'onlyMimes' : [],
                 #on upload -  if True - old file will be replaced with new one, if False new file get name - original_name-number.ext
-                'uploadOverwrite' : True,
+                #'uploadOverwrite' : True,
                 #mimetypes allowed to upload
                 'uploadAllow' : ['all',],
                 #mimetypes not allowed to upload
@@ -77,14 +77,14 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #'copyFrom' : True,
                 #allow to copy from other volumes to this one?
                 #'copyTo' : True,
-                #list of commands disabled on this root
+                #Regular expression against which all new file names will be validated.
                 #'disabled' : [],
-                #regexp or function name to validate new file name
+                #regexp against which new file names will be validated
                 #enable this to allow creating hidden files
                 #'acceptedName' : r'.*',
-                #function/class method to control files permissions
-                #the elFinderTestACL hides all files starting with .
-                'accessControl' : [elFinderTestACL(), 'fsAccess'],
+                #callable to control files permissions
+                #`fs_standard_access` hides all files starting with .
+                'accessControl' : fs_standard_access,
                 #some data required by access control
                 #'accessControlData' : None,
                 #default permissions. not set hidden/locked here - take no effect
@@ -138,7 +138,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 'uploadDeny' : ['all',],
                 'uploadMaxSize' : '128m',
                 'disabled' : ['mkfile', 'archive'],
-                'accessControl' : [elFinderTestACL(), 'fsAccess'],
+                'accessControl' : fs_standard_access,
                 'attributes' : [
                     {
                         'pattern' : r'\.tmb$',

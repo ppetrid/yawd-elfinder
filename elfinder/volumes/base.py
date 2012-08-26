@@ -126,10 +126,8 @@ class ElfinderVolumeDriver(object):
             'disabled' : [],
             #regexp or function name to validate new file name
             'acceptedName' : r'^[^\.].*', #<-- DONT touch this! Use constructor options to overwrite it!
-            #function/class method to control files permissions
+            #callable to control files permissions
             'accessControl' : None,
-            #some data required by access control
-            'accessControlData' : None,
             #default permissions. not set hidden/locked here - take no effect
             'defaults' : {
                 'read' : True,
@@ -275,14 +273,7 @@ class ElfinderVolumeDriver(object):
                 if 'pattern' in a and len(a) > 1:
                     self._attributes.append(a)
         
-        try:
-            self._access = [self._options['accessControl'][0], self._options['accessControl'][1]]
-        except (KeyError, TypeError):
-            try:
-                self._access = self._options['accessControl']
-            except KeyError:
-                pass
-        
+        self._access = self._options['accessControl']
         self._today = time.mktime(datetime.date.today().timetuple())
         self._yesterday = self._today-86400
 
@@ -1114,13 +1105,8 @@ class ElfinderVolumeDriver(object):
         perm = None
         #TODO: replace this with signals??
         if self._access:
-            if isinstance(self._access, list):
-                obj = self._access[0]
-                method = self._access[1]
-                perm = getattr(obj, method)(name, path, self._options['accessControlData'], self)
-            else:
-                func = self._access
-                perm = getattr(sys.modules[__name__], func)(name, path, self._options['accessControlData'], self)
+            if hasattr(self._access, '__call__'):
+                perm = self._access(name, path, self)
 
             if perm != None:
                 return perm
@@ -1136,19 +1122,14 @@ class ElfinderVolumeDriver(object):
 
     def allowCreate(self, dir_, name):
         """
-        Return True if file with given name can be created in given folder.
+        Return ``True`` if file with given ``name`` can be created in the ``dir_`` folder.
         """
         path = self._joinPath(dir_, name)
         perm = None
         
         if self._access:
-            if isinstance(self._access, list):
-                obj = self._access[0]
-                method = self._access[1]
-                perm = getattr(obj, method)(name, path, self._options['accessControlData'], self)
-            else:
-                func = self._access
-                perm = getattr(sys.modules[__name__], func)(name, path, self._options['accessControlData'], self)
+            if hasattr(self._access, '__call__'):
+                perm = self._access(name, path, self)
             
             if perm != None:
                 return perm
@@ -1160,7 +1141,7 @@ class ElfinderVolumeDriver(object):
             if 'write' in attrs and 'pattern' in attrs and re.search(attrs['pattern'], testPath):
                 perm = attrs['write']
 
-        return True if perm == None else perm
+        return True if perm is None else perm
 
     def stat(self, path):
         """
@@ -1169,7 +1150,6 @@ class ElfinderVolumeDriver(object):
         statCache = cache.get(self._cachekeys()[1], {})
         if not path in statCache:
             self.updateCache(path, self._stat(path), statCache)
-            print 'updatedCache %s %s' % (path, statCache[path])
             cache.set(self._cachekeys()[1], statCache)
         return statCache[path]
 
@@ -1182,7 +1162,6 @@ class ElfinderVolumeDriver(object):
             return
 
         stat['hash'] = self.encode(path)
-        print 'in updateCache'
         root = (path == self._root)
         if root:
             stat['volumeid'] = self.id()
@@ -1362,9 +1341,7 @@ class ElfinderVolumeDriver(object):
         files = []
         dirsCache = self.getDirsCache(path)
         if not dirsCache:
-            print 'getScandir - not in cache'
             dirsCache = self.cacheDir(path)
-        print 'getScandir %s' % dirsCache
 
         for p in dirsCache:
             stat = self.stat(p)
