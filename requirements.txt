@@ -1,0 +1,4 @@
+yawd-elfinder
+Django>=1.4
+PIL
+python-magic
