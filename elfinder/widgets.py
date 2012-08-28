@@ -16,8 +16,8 @@ class ElfinderWidget(forms.HiddenInput):
     ``optionset``
         The key of the ELFINDER_CONNECTOR_OPTION_SETS setting to use as connector settings 
     """
-    def __init__(self, optionset, attrs={'size':'42'}, options={}):
-        self.options, self.optionset = options, optionset
+    def __init__(self, optionset, start_path, attrs={'size':'42'}, options={}):
+        self.options, self.optionset, self.start_path = options, optionset, start_path
         super(ElfinderWidget, self).__init__(attrs)
 
     def _media(self):
@@ -35,15 +35,22 @@ class ElfinderWidget(forms.HiddenInput):
         #if self.optionset in ls.ELFINDER_CONNECTOR_OPTION_SETS and 'uploadAllow' in ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset] and ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset]['uploadAllow']:
         #    html = '<div class="elfinder_filetypes">(' + _('Allowed mime types: ') + str(ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset]['uploadAllow']) + ')</div>'
 
-        self.options.update({ 'url' : reverse('yawdElfinderConnectorView', args=[self.optionset]) })
+        self.options.update({ 
+            'url' : reverse('yawdElfinderConnectorView', args=[
+                    self.optionset, 
+                    'default' if self.start_path is None else self.start_path
+                ]),
+            'rememberLastDir' : True if not self.start_path else False
+        })
+
         if value:
             if not isinstance(value, ElfinderFile):
-                value = ElfinderFile(hash_=value,optionset=self.optionset)
+                value = ElfinderFile(hash_=value, optionset=self.optionset)
             file_ = 'file : %s' % json.dumps(value.info)
         else:
             file_ = 'file : {}'
         
-        elfinder = ' elfinder : %s' % json.dumps(self.options)
+        elfinder = 'elfinder : %s' % json.dumps(self.options)
  
         html = ('%(super)s\n'
                 '<script>\n'

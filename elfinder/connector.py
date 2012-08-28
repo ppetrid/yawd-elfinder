@@ -221,7 +221,7 @@ class ElfinderConnector:
             else:
                 #on init request we can get invalid dir hash -
                 #dir which can not be opened now, but remembered by client,
-                #so open default dir
+                #so open default volume
                 volume = self._default
         
         try:
@@ -229,7 +229,7 @@ class ElfinderConnector:
             if not cwd['read'] and init:
                 try:
                     cwd = volume.dir(hash_=volume.defaultPath(), resolveLink=True)
-                except (DirNotFoundError, FileNotFoundError)as e:
+                except (DirNotFoundError, FileNotFoundError) as e:
                     return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, hash_, e)}
         except (DirNotFoundError, FileNotFoundError) as e:
             if init:

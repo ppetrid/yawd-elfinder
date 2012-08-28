@@ -315,11 +315,16 @@ class ElfinderVolumeDriver(object):
         if 'read' in root and root['read']:
             #check startPath - path to open by default instead of root
             if self._options['startPath']:
-                start = self.stat(self._options['startPath'])
-                if start['mime'] == 'directory' and start['read'] and not self.isHidden(start) and self._inpath(self._options['startPath'], self._root):
-                    self._startPath = self._options['startPath']
-                    if self._startPath[-1] == self._options['separator']:
-                        self._startPath = self._startPath[:-1]
+                try:
+                    startpath = self._joinPath(self._root, self._options['startPath'])
+                    start = self.stat(startpath)
+                    if start['mime'] == 'directory' and start['read'] and not self.isHidden(start):
+                        self._startPath = startpath
+                        if startpath[-1] == self._options['separator']:
+                            self._startPath = startpath[:-1]
+                except os.error:
+                    #Fail silently if startPath does not exist
+                    pass
         else:
             self._options['URL'] = ''
             self._options['tmbURL'] = ''
@@ -368,6 +373,7 @@ class ElfinderVolumeDriver(object):
         """
         Return root or startPath hash
         """
+        print self._startPath
         return self.encode(self._startPath if self._startPath else self._root)
     
     def options(self, hash_):

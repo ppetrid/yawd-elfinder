@@ -88,6 +88,13 @@ class ElfinderConnectorView(View):
             return src['cmd']
         except KeyError:
             return 'open'
+        
+    def get_optionset(self, **kwargs):
+        set = ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']].copy()
+        if kwargs['start_path'] != 'default':
+            for root in set['roots']:
+                root['startPath'] = kwargs['start_path']
+        return set
     
     @method_decorator(staff_member_required)
     @method_decorator(csrf_exempt)
@@ -100,7 +107,7 @@ class ElfinderConnectorView(View):
         """
         used in get method calls
         """
-        self.elfinder = ElfinderConnector(ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']], request.session)
+        self.elfinder = ElfinderConnector(self.get_optionset(**kwargs), request.session)
         return self.output(self.get_command(request.GET), request.GET)
 
     def post(self, request, *args, **kwargs):
@@ -108,7 +115,7 @@ class ElfinderConnectorView(View):
         called in post method calls.
         It only allows for the 'upload' command
         """
-        self.elfinder = ElfinderConnector(ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']], request.session)
+        self.elfinder = ElfinderConnector(self.get_optionset(**kwargs), request.session)
         cmd = self.get_command(request.POST)
         
         if not cmd in ['upload']:

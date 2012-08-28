@@ -62,11 +62,11 @@ class ElfinderFormField(CharField):
     This class specifies the default widget for the elfinder form field
     """
     
-    def __init__(self, optionset, *args, **kwargs):
+    def __init__(self, optionset, start_path, *args, **kwargs):
         from widgets import ElfinderWidget
         super(ElfinderFormField, self).__init__(*args, **kwargs)
         #self.validators.append(FilePathOrURLValidator(verify_exists=True))
-        self.widget = ElfinderWidget(optionset)
+        self.widget = ElfinderWidget(optionset, start_path)
 
 class ElfinderField(models.Field):
     """
@@ -76,8 +76,9 @@ class ElfinderField(models.Field):
     description = "An elfinder file model field."
     __metaclass__ = models.SubfieldBase
 
-    def __init__(self, optionset='default', *args, **kwargs):
+    def __init__(self, optionset='default', start_path=None, *args, **kwargs):
         self.optionset = optionset
+        self.start_path = start_path
 
         if not 'max_length' in kwargs:
             kwargs['max_length'] = 100 #default field length
@@ -107,7 +108,8 @@ class ElfinderField(models.Field):
     def formfield(self, **kwargs):
         defaults = {
                 'form_class': ElfinderFormField,
-                'optionset' : self.optionset
+                'optionset' : self.optionset,
+                'start_path' : self.start_path
         }
         defaults.update(kwargs)
         return super(ElfinderField, self).formfield(**defaults)

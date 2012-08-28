@@ -68,7 +68,6 @@
 			}),
 			keywords : $.extend({}, defaults.keywords, options.keywords) 
 		};
-	
 		this.init();
 	}
 	
