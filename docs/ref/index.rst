@@ -6,5 +6,6 @@ Reference
    :maxdepth: 1
    
    settings
+   fields
    connector
    utils

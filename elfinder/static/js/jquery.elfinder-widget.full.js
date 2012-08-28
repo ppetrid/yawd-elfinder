@@ -1,3 +1,12 @@
+/* 
+ * A jquery plugin to support the the yawd-elfinder widget
+ * Author: yawd, http://www.yawd.eu
+ * Version: 1.0
+ * 
+ * elfinder client configuration options can be found here:
+ * https://github.com/Studio-42/elFinder/wiki/Client-configuration-options
+ */
+
 (function($) {
 	
 	var defaults = {

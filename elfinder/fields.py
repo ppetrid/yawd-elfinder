@@ -4,7 +4,7 @@ from connector import ElfinderConnector
 
 class ElfinderFile(object):
     """
-    This object represents an Elfinder file.
+    This class represents an Elfinder file.
     """
     
     def __init__(self, hash_, optionset):
@@ -47,11 +47,19 @@ class ElfinderFile(object):
         
     @property
     def url(self):
+        """
+        Get the file url
+        """
         info = self._get_info()
         return '%s%s' % (info['rootUrl'], '/'.join(info['path'].split(info['separator'])[1:]))
     
     @property
     def info(self):
+        """
+        Returns:
+            a **dictionary** holding information about the file, 
+            as returned by the volume driver.
+        """
         return self._get_info()
             
     def __unicode__(self):
@@ -59,7 +67,8 @@ class ElfinderFile(object):
 
 class ElfinderFormField(CharField):
     """
-    This class specifies the default widget for the elfinder form field
+    Override the standard CharField form field
+    to set :class:`elfinder.widgets.ElfinderWidget` as the default widget.
     """
     
     def __init__(self, optionset, start_path, *args, **kwargs):
@@ -70,7 +79,7 @@ class ElfinderFormField(CharField):
 
 class ElfinderField(models.Field):
     """
-    This model field is used to hold the path of a file uploaded to the server or a full URL pointing to a file
+    Custom model field holding an :class:`elfinder.fields.ElfinderFile` object.
     """
     
     description = "An elfinder file model field."
@@ -86,26 +95,44 @@ class ElfinderField(models.Field):
         super(ElfinderField, self).__init__(*args, **kwargs)
         
     def get_internal_type(self):
+        """
+        This lets Django know how to handle the field
+        """
         return "CharField"
         
     def to_python(self, value):
+        """
+        Convert ``value`` to an :class:`elfinder.fields.ElfinderFile` object.
+        """
         if isinstance(value, ElfinderFile):
             return value
         return ElfinderFile(hash_=value, optionset=self.optionset)
     
     def get_prep_value(self, value):
+        """
+        Overriden method to return a string representation of 
+        the :class:`elfinder.fields.ElfinderFile`.
+        """
         if isinstance(value, ElfinderFile):
             return value.hash
         return value
     
     def get_prep_lookup(self, lookup_type, value):
-        # We only handle 'exact' and 'in'. All others are errors.
+        """
+        Overriden method to disallow 
+        ``year``, ``month`` and ``day`` queries
+        """
         if lookup_type in ['year', 'month', 'day']:
             raise TypeError('Lookup type %r not supported.' % lookup_type)
         
         return super(ElfinderField, self).get_prep_lookup(lookup_type, value)
         
     def formfield(self, **kwargs):
+        """
+        Overriden method to set the form field defaults.
+        See :class:`elfinder.fields.ElfinderFormField`
+        """
+        
         defaults = {
                 'form_class': ElfinderFormField,
                 'optionset' : self.optionset,

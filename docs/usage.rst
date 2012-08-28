@@ -49,7 +49,21 @@ When using
 
 Of course, you can define your own *optionsets*. For more information on 
 how to do this, view the :ref:`setting-ELFINDER_CONNECTOR_OPTION_SETS` 
-setting documentation. 
+setting documentation.
+
+:class:`elfinder.fields.ElfinderFile` can also accept a ``start_path`` argument
+to indicate the default folder to open for this field. For example, to open
+a folder named *'languages'* you could use the following code:
+
+.. code-block:: python
+
+   my_field = ElfinderField(optionset='image', start_path='languages')
+   
+yawd-elfinder expects that the path defined in ``star_path`` is *relative to
+the volume root* (see the :ref:`setting-path` setting). In fact, 
+``start_path`` sets the  :ref:`setting-startPath` setting to the
+provided value.
+
 
 Django templates
 ================
