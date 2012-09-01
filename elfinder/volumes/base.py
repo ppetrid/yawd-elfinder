@@ -373,7 +373,6 @@ class ElfinderVolumeDriver(object):
         """
         Return root or startPath hash
         """
-        print self._startPath
         return self.encode(self._startPath if self._startPath else self._root)
     
     def options(self, hash_):
