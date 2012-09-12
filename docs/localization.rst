@@ -14,9 +14,9 @@ To provide an additional translation, first copy
 under a directory of your own. Copy ``elfinder.LANG.js`` to
 a new file, provide the translation strings and rename appropriately. Override 
 the :ref:`setting-ELFINDER_LANGUAGES` setting to reflect your changes (i.e
- add your locale to the list; locale name must conform to _localename).
- Finally, override the :ref:`setting-ELFINDER_LANGUAGES_ROOT_URL` setting
- to point to your translation directory.
+add your locale to the list; locale name must conform to _localename).
+Finally, override the :ref:`setting-ELFINDER_LANGUAGES_ROOT_URL` setting
+to point to your translation directory.
  
 **Do not forget** to contribute your translations to the original 
 `elfinder <https://github.com/Studio-42/elFinder>`_ project.

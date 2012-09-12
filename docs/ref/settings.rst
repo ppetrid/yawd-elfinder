@@ -52,8 +52,8 @@ ELFINDER_LANGUAGES_ROOT_URL
 
 Default:: ``'%selfinder/js/i18n/' % settings.STATIC_URL``
 
-The root url under which elfinder translation files are available. It can be
-overriden in your project's admin settings 
+The root url under which elfinder translation files are available. You can
+override this in your project's root settings 
 
 .. _setting-ELFINDER_LANGUAGES:
 
