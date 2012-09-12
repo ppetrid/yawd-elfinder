@@ -61,7 +61,7 @@ ELFINDER_LANGUAGES
 ------------------
 
 Default::
-   ['ar', 'bg', 'ca', 'cs', 'de', 'es', 'fa', 'fr', 'hu', 'it', 'jp', 'ko', 'nl', 'no', 'pl', 'pt_BR', 'ru', 'tr', 'zh_CN']
+   ['ar', 'bg', 'ca', 'cs', 'de', 'el', 'es', 'fa', 'fr', 'hu', 'it', 'jp', 'ko', 'nl', 'no', 'pl', 'pt_BR', 'ru', 'tr', 'zh_CN']
    
 A list of the available locales. For each one of these locales, a 
 `valid elfinder translation file <https://github.com/Studio-42/elFinder/tree/2.x/js/i18n>`_ 
