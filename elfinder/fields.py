@@ -74,7 +74,7 @@ class ElfinderFormField(CharField):
     def __init__(self, optionset, start_path, *args, **kwargs):
         from widgets import ElfinderWidget
         super(ElfinderFormField, self).__init__(*args, **kwargs)
-        #self.validators.append(FilePathOrURLValidator(verify_exists=True))
+        #TODO: elfinder widget should be initialized using possible client options from model field declaration 
         self.widget = ElfinderWidget(optionset, start_path)
 
 class ElfinderField(models.Field):

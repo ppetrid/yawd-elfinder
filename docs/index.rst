@@ -26,6 +26,7 @@ Contents:
    requirements
    installation
    usage
+   localization
    ref/index
 
 Indices and tables

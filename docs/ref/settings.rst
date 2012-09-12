@@ -45,6 +45,29 @@ Default::
    
 A dictionary containing the css files included by yawd-elfinder.
 
+.. _setting-ELFINDER_LANGUAGES_ROOT_URL:
+
+ELFINDER_LANGUAGES_ROOT_URL
+---------------------------
+
+Default:: ``'%selfinder/js/i18n/' % settings.STATIC_URL``
+
+The root url under which elfinder translation files are available. It can be
+overriden in your project's admin settings 
+
+.. _setting-ELFINDER_LANGUAGES:
+
+ELFINDER_LANGUAGES
+------------------
+
+Default::
+   ['ar', 'bg', 'ca', 'cs', 'de', 'es', 'fa', 'fr', 'hu', 'it', 'jp', 'ko', 'nl', 'no', 'pl', 'pt_BR', 'ru', 'tr', 'zh_CN']
+   
+A list of the available locales. For each one of these locales, a 
+`valid elfinder translation file <https://github.com/Studio-42/elFinder/tree/2.x/js/i18n>`_ 
+must exist under the :ref:`setting-ELFINDER_LANGUAGES_ROOT_URL` url. You can
+override this setting in your project's main setting file.
+
 .. _setting-ELFINDER_CONNECTOR_OPTION_SETS:
 
 ELFINDER_CONNECTOR_OPTION_SETS
@@ -396,10 +419,10 @@ Default::
       'write' : True,
    }
  
-Default file permissions. Given a specific file, these are applied when:
+Default file permissions. Given a file, these are applied when:
 
-* No :ref:_setting-accessControl callable is provided, or the callable returns ``None`` for this file
-* No :ref:setting-attributes rule applies to the file
+* No :ref:`setting-accessControl` callable is provided, or the callable returns ``None`` for this file
+* No :ref:`setting-attributes` rule applies to the file
 
 .. note::
    

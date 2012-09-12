@@ -6,7 +6,7 @@ from elfinder.volumes.filesystem import ElfinderVolumeLocalFileSystem
 ELFINDER_JS_URLS = {
     'a_jquery' : '//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
     'b_jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/jquery-ui.min.js',
-    'c_elfinder' : '%selfinder/js/elfinder.full.js' % settings.STATIC_URL
+    'c_elfinder' : '%selfinder/js/elfinder.full.js' % settings.STATIC_URL,
 }
 #allow to override any key in the project settings file   
 ELFINDER_JS_URLS.update(getattr(settings, 'ELFINDER_JS_URLS', {}))
@@ -20,6 +20,11 @@ ELFINDER_CSS_URLS.update(getattr(settings, 'ELFINDER_CSS_URLS', {}))
 
 ELFINDER_WIDGET_JS_URL = '%sjs/jquery.elfinder-widget.full.js' % settings.STATIC_URL
 ELFINDER_WIDGET_CSS_URL = '%scss/jquery.elfinder-widget.full.css' % settings.STATIC_URL
+
+ELFINDER_LANGUAGES_ROOT_URL = getattr(settings, 'ELFINDER_LANGUAGES_ROOT_URL', '%selfinder/js/i18n/' % settings.STATIC_URL)
+
+#The available language codes. A corresponding ELFINDER_LANGUAGES_ROOT_URL/elfinder.{ext}.js url must be available  
+ELFINDER_LANGUAGES = getattr(settings, 'ELFINDER_LANGUAGES', ['ar', 'bg', 'ca', 'cs', 'de', 'es', 'fa', 'fr', 'hu', 'it', 'jp', 'ko', 'nl', 'no', 'pl', 'pt_BR', 'ru', 'tr', 'zh_CN'])
 
 ELFINDER_CONNECTOR_OPTION_SETS = {
     #the default keywords demonstrates all possible configuration options

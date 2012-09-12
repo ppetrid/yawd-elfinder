@@ -1,8 +1,9 @@
 from django import forms
 from django.utils.translation import ugettext as _
-from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.utils import simplejson as json
+from django.utils.safestring import mark_safe
+from django.utils.translation import to_locale, get_language
 from fields import ElfinderFile
 from conf import settings as ls
 
@@ -17,15 +18,26 @@ class ElfinderWidget(forms.HiddenInput):
         The key of the ELFINDER_CONNECTOR_OPTION_SETS setting to use as connector settings 
     """
     def __init__(self, optionset, start_path, attrs={'size':'42'}, options={}):
+        
         self.options, self.optionset, self.start_path = options, optionset, start_path
         super(ElfinderWidget, self).__init__(attrs)
+        
+        #locate current locale
+        self.current_locale = to_locale(get_language()) 
 
     def _media(self):
         """
         Set the widget's javascript and css
         """
-        return forms.Media(css= {'screen': [ls.ELFINDER_CSS_URLS[x] for x in sorted(ls.ELFINDER_CSS_URLS)] + [ls.ELFINDER_WIDGET_CSS_URL]}, 
-            js = [ls.ELFINDER_JS_URLS[x] for x in sorted(ls.ELFINDER_JS_URLS)] + [ls.ELFINDER_WIDGET_JS_URL])
+        js = [ls.ELFINDER_JS_URLS[x] for x in sorted(ls.ELFINDER_JS_URLS)] + [ls.ELFINDER_WIDGET_JS_URL]
+        screen_css = [ls.ELFINDER_CSS_URLS[x] for x in sorted(ls.ELFINDER_CSS_URLS)] + [ls.ELFINDER_WIDGET_CSS_URL]
+
+        #add language file to javascript media
+        if not self.current_locale.startswith('en') and self.current_locale in ls.ELFINDER_LANGUAGES:
+            js.append('%selfinder.%s.js' % (ls.ELFINDER_LANGUAGES_ROOT_URL, self.current_locale))
+        
+        return forms.Media(css= {'screen': screen_css}, js = js)
+
     media = property(_media)
     
     def render(self, name, value, attrs=None):
@@ -35,6 +47,7 @@ class ElfinderWidget(forms.HiddenInput):
         #if self.optionset in ls.ELFINDER_CONNECTOR_OPTION_SETS and 'uploadAllow' in ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset] and ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset]['uploadAllow']:
         #    html = '<div class="elfinder_filetypes">(' + _('Allowed mime types: ') + str(ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset]['uploadAllow']) + ')</div>'
 
+        #update the elfinder client options
         self.options.update({ 
             'url' : reverse('yawdElfinderConnectorView', args=[
                     self.optionset, 
@@ -42,6 +55,10 @@ class ElfinderWidget(forms.HiddenInput):
                 ]),
             'rememberLastDir' : True if not self.start_path else False
         })
+        
+        #update the elfinder client language
+        if not self.current_locale.startswith('en') and self.current_locale in ls.ELFINDER_LANGUAGES:
+            self.options.update({ 'lang' : self.current_locale })
 
         if value:
             if not isinstance(value, ElfinderFile):
@@ -50,7 +67,7 @@ class ElfinderWidget(forms.HiddenInput):
         else:
             file_ = 'file : {}'
         
-        elfinder = 'elfinder : %s' % json.dumps(self.options)
+        elfinder = 'elfinder : %s' % json.dumps(self.options) 
  
         html = ('%(super)s\n'
                 '<script>\n'
