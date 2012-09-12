@@ -104,7 +104,7 @@
 		
 		//initialize close
 		var elf = this.elfinder;
-		$('<div class="elfinder-close" />')
+		$('<div class="elfinder-close" /><div class="clear"></div>')
 			.click(function() {
 				elf.parent().hide();
 				elf.elfinder('hide');
