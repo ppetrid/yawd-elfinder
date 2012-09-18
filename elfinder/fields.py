@@ -1,5 +1,6 @@
 from django.db import models
 from django.forms import CharField
+from django.core.exceptions import ValidationError
 from connector import ElfinderConnector
 
 class ElfinderFile(object):
@@ -74,8 +75,28 @@ class ElfinderFormField(CharField):
     def __init__(self, optionset, start_path, *args, **kwargs):
         from widgets import ElfinderWidget
         super(ElfinderFormField, self).__init__(*args, **kwargs)
-        #TODO: elfinder widget should be initialized using possible client options from model field declaration 
+        #TODO: elfinder widget should be initialized using possible client options from model field declaration
+        self.optionset = optionset 
         self.widget = ElfinderWidget(optionset, start_path)
+        
+    def to_python(self, value):
+        """
+        Convert ``value`` to an :class:`elfinder.fields.ElfinderFile` object.
+        """
+        if isinstance(value, ElfinderFile):
+            return value
+        return ElfinderFile(hash_=value, optionset=self.optionset)
+    
+    def clean(self, value):
+        """
+        Override the default CharField validation to validate the 
+        ElfinderFile hash string before converting it to an ElfinderField
+        object. Finally, return a cleaned ElfinderFile object.  
+        """
+        self.validate(value)
+        self.run_validators(value)
+        value = self.to_python(value)
+        return value
 
 class ElfinderField(models.Field):
     """
