@@ -83,6 +83,6 @@ When promted, create an admin account. Finally, start the web server::
 ...and visit *http://localhost:8000/admin/test_app/yawdelfindertestmodel/1/*
 to see the admin widget and interact with the elfinder connector. A quick 
 index view example is available at *http://localhost:8000/*.
-Once you are done, you can deactivate the virtuel environment::
+Once you are done, you can deactivate the virtual environment::
 
    deactivate elfinder
