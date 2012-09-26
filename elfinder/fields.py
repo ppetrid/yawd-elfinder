@@ -38,6 +38,12 @@ class ElfinderFile(object):
                     if 'url' in info: 
                         info['rootUrl'] = info['url']
                         del info['url']
+                        
+                    if 'archivers' in info:
+                        del info['archivers']
+                        
+                    if 'extract' in info:
+                        del info['extract']
     
                     self._info = info
                 except:

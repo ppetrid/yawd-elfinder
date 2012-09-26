@@ -245,7 +245,7 @@ if (elFinder && elFinder.prototype && typeof(elFinder.prototype.i18) == 'object'
 			'maintainer'      : 'συντηρητής',
 			'translator'      : 'μεταφραστής',
 			'icons'           : 'Εικονίδια',
-			'dontforget'      : 'and don\'t forget to take your towel',
+			'dontforget'      : 'και μην ξεχάσεις την πετσέτα σου!',
 			'shortcutsof'     : 'Οι συντομεύσεις είναι απενεργοποιημένες',
 			'dropFiles'       : 'Κάντε drop τα αρχεία εδώ',
 			'or'              : 'ή',
@@ -266,7 +266,7 @@ if (elFinder && elFinder.prototype && typeof(elFinder.prototype.i18) == 'object'
 			'rotate-cw'       : 'Περιστροφή κατά 90 βαθμούς CW',
 			'rotate-ccw'      : 'Περιστροφή κατά 90 βαθμούς CCW',
 			'degree'          : 'Βαθμός',
-			'netMountDialogTitle' : 'Mount network volume', // added 18.04.2012
+			'netMountDialogTitle' : 'Φορτώστε δικτυακό δίσκο', // added 18.04.2012
 			'protocol'            : 'Πρωτόκολλο', // added 18.04.2012
 			'host'                : 'Host', // added 18.04.2012
 			'port'                : 'Port', // added 18.04.2012
