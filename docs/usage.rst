@@ -74,7 +74,7 @@ Based on the above ``SimpleArticle`` example, if ``object`` is a
 
 .. code-block:: django
    
-   <img src="{{:object.image.url}}" alt="{{object.name}}" />
+   <img src="{{object.image.url}}" alt="{{object.name}}" />
 
 Volume Drivers
 ==============
