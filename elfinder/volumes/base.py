@@ -1016,7 +1016,6 @@ class ElfinderVolumeDriver(object):
             if not p:
                 p = self._separator
 
-            #TODO: crypt path and return hash
             hash_ = self.crypt(p)
             #hash is used as id in HTML that means it must contain vaild chars
             #make base64 html safe and append prefix in begining
@@ -1040,7 +1039,7 @@ class ElfinderVolumeDriver(object):
             #put cut = at the end
             h += "=" * ((4 - len(h) % 4) % 4)
             h = b64decode(h)
-            #TODO: uncrypt hash and return path
+
             path = self.uncrypt(h) 
             #append ROOT to path after it was cut in encode
             return self._abspath(path) 

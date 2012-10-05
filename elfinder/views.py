@@ -1,9 +1,10 @@
+from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse, Http404
+from django.utils.decorators import method_decorator
+from django.utils import simplejson as json
 from django.views.generic.base import View
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.admin.views.decorators import staff_member_required
-from django.utils.decorators import method_decorator
-from django.http import HttpResponse, Http404
-from django.utils import simplejson as json
 from exceptions import ElfinderErrorMessages
 from elfinder.connector import ElfinderConnector
 from elfinder.conf import settings as ls
@@ -18,7 +19,9 @@ class ElfinderConnectorView(View):
         It returns a json-encoded response, unless it was otherwise requested
         by the command operation
         """
-        #TODO: we probably want to allow only ajax communication, unless we are in debug mode
+        
+        if not settings.DEBUG and not self.request.is_ajax():
+            raise Http404
 
         kwargs = {}
         additional_headers = {}
@@ -90,11 +93,11 @@ class ElfinderConnectorView(View):
             return 'open'
         
     def get_optionset(self, **kwargs):
-        set = ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']].copy()
+        set_ = ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']].copy()
         if kwargs['start_path'] != 'default':
-            for root in set['roots']:
+            for root in set_['roots']:
                 root['startPath'] = kwargs['start_path']
-        return set
+        return set_
     
     @method_decorator(staff_member_required)
     @method_decorator(csrf_exempt)
