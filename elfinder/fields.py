@@ -58,7 +58,7 @@ class ElfinderFile(object):
         Get the file url
         """
         info = self._get_info()
-        return '%s%s' % (info['rootUrl'], '/'.join(info['path'].split(info['separator'])[1:]))
+        return '%s%s' % (info['rootUrl'], '/'.join(info['path'].split(info['separator'])[1:])) if info else ''
     
     @property
     def info(self):
