@@ -4,7 +4,7 @@ import elfinder
 
 setup(
       name='yawd-elfinder',
-      url='http://www.yawd.eu/content/articles/3/12/yawd-elfinder/',
+      url='http://yawd.eu/open-source-projects/yawd-elfinder/',
       version = elfinder.__version__,
       description='Elfinder-based file management solution for Django',
       author='yawd',
