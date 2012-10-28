@@ -42,7 +42,7 @@ class ElfinderConnector:
         
         try: #initialize opts if they are incorrect
             opts['roots']
-        except TypeError, KeyError:
+        except (TypeError, KeyError):
             opts = {'roots' : []}
 
         self._volumes = {}
@@ -147,17 +147,20 @@ class ElfinderConnector:
         """        
         if not self._loaded:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_CONF, ElfinderErrorMessages.ERROR_CONF_NO_VOL)}
-
-        if 'mimes' in kwargs:
-            for id_ in self._volumes:
-                self._volumes[id_].setMimesFilter(kwargs['mimes'])
         
         if not self.commandExists(cmd):
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_UNKNOWN_CMD, cmd)}
         
+        #check all required arguments are provided
         for arg, req in self.commandArgsList(cmd).items():
             if req and not kwargs[arg]:
                 return {'error' : self.error(ElfinderErrorMessages.ERROR_INV_PARAMS, cmd)}
+        
+        #set mimes filter and pop mimes from the arguments list
+        if 'mimes' in kwargs:
+            for id_ in self._volumes:
+                self._volumes[id_].setMimesFilter(kwargs['mimes'])
+            kwargs.pop('mimes')
         
         result = getattr(self, cmd)(**kwargs)
         
@@ -273,7 +276,7 @@ class ElfinderConnector:
         
         return result
 
-    def ls(self, target, mimes=[], debug=False):
+    def ls(self, target, debug=False):
         """
         **Command**: Return a directory's file list
         """
@@ -412,7 +415,7 @@ class ElfinderConnector:
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKDIR, name, e) }
 
-    def mkfile(self, target, name, mimes=[], debug=False):
+    def mkfile(self, target, name, debug=False):
         """
         **Command**: Create a new, empty file.
         """
@@ -428,7 +431,7 @@ class ElfinderConnector:
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKFILE, name, e) }
 
-    def rename(self, target, name, mimes=[], debug=False):
+    def rename(self, target, name, debug=False):
         """
         **Command**: Rename a file.
         """
@@ -490,7 +493,7 @@ class ElfinderConnector:
 
         return result
     
-    def upload(self, target, FILES, html=False, mimes=[], debug=False):
+    def upload(self, target, FILES, html=False, debug=False):
         """
         **Command**: Save uploaded files.
         """
@@ -520,7 +523,7 @@ class ElfinderConnector:
 
         return result
 
-    def paste(self, targets, dst, cut=False, mimes=[], debug=False):
+    def paste(self, targets, dst, cut=False, debug=False):
         """
         **Command**: Copy/move ``targets`` files into a new destination ``dst``.
         """
@@ -573,7 +576,7 @@ class ElfinderConnector:
         
         return {'content' : content }
 
-    def put(self, target, content, mimes=[], debug=False):
+    def put(self, target, content, debug=False):
         """
        **Command**:  Save ``content`` into a text file
         """
@@ -588,11 +591,11 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_SAVE, volume.path(target), e)}
 
-    def extract(self, target, mimes=[], debug=False):
+    def extract(self, target, debug=False):
         """
         Extract files from archive
         """
-        #TODO: Mimes are currently not being used
+
         try:
             volume = self._volume(target)
             volume.file(target)
@@ -604,12 +607,12 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_EXTRACT, volume.path(target), e)}
 
-    def archive(self, targets, type_, mimes=[], debug=False):
+    def archive(self, targets, type_, debug=False):
         """
         **Command**: Create a new archive file containing all files in
         ``targets`` param.
         """
-        #TODO: Mimes are currently not being used
+
         try:
             volume = self._volume(targets[0])
         except:
@@ -620,14 +623,14 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_ARCHIVE, e)}
 
-    def search(self, q, mimes=[], debug=False):
+    def search(self, q, debug=False):
         """
         **Command**: Search files for ``q``.
         """
         q = q.strip()
         result = []
         for volume in self._volumes.values():
-            result += volume.search(q, mimes)
+            result += volume.search(q)
         return {'files' : result}
 
     def info(self, targets, options=False, debug=False):
