@@ -161,7 +161,12 @@ class ElfinderConnector:
             for id_ in self._volumes:
                 self._volumes[id_].setMimesFilter(kwargs['mimes'])
             kwargs.pop('mimes')
-        
+
+        debug = self._debug or ('debug' in kwargs and kwargs['debug'])
+        #remove debug kewyord argument  
+        if 'debug' in kwargs:
+            kwargs.pop('debug')
+
         result = getattr(self, '_%s' % cmd)(**kwargs)
         
         #checked for removed items as these are not directly returned
@@ -169,17 +174,11 @@ class ElfinderConnector:
             for id_ in self._volumes:
                 result['removed'] += self._volumes[id_].removed()
                 self._volumes[id_].resetRemoved()
+            #replace removed files info with removed files hashes and filter out duplicates
+            result['removed'] = list(set([f['hash'] for f in result['removed']]))
         
         #call handlers for this command
         #TODO: a signal must be sent here
-        
-        #replace removed files info with removed files hashes
-        if 'removed' in result:
-            removed = []
-            for file_ in result['removed']:
-                if not file_['hash'] in removed:
-                    removed.append(file_['hash'])
-            result['removed'] = removed
 
         #remove hidden files and filter files by mimetypes
         if 'added' in result:
@@ -189,21 +188,18 @@ class ElfinderConnector:
         if 'changed' in result:
             result['changed'] = self._filter(result['changed'])
         
-        if self._debug or ('debug' in kwargs and kwargs['debug']):
+        if debug:
             result['debug'] = {
                 'connector' : 'yawd-python',
                 'time' : time.time() - self._time,
                 'upload' : self._uploadDebug,
-                'volumes' : [],
+                'volumes' : [v.debug() for v in self._volumes.values()],
                 'mountErrors' : self._mountErrors
             }
-            
-            for id_,volume in self._volumes.items():
-                result['debug']['volumes'].append(volume.debug())
-            
+
         return result
 
-    def _open(self, target='', init=False, tree=False, debug=False):
+    def _open(self, target='', init=False, tree=False):
         """
         **Command**: Open a directory
         
@@ -281,7 +277,7 @@ class ElfinderConnector:
         
         return result
 
-    def _ls(self, target, debug=False):
+    def _ls(self, target):
         """
         **Command**: Return a directory's file list. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -292,7 +288,7 @@ class ElfinderConnector:
         except:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, '#%s' % target) }
 
-    def _tree(self, target, debug=False):
+    def _tree(self, target):
         """
         **Command**: Return subdirs for required directory. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -303,7 +299,7 @@ class ElfinderConnector:
         except:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, '#%s' % target) }
     
-    def _parents(self, target, debug=False):
+    def _parents(self, target):
         """
         **Command**: Return parents dir for required directory. this method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -314,7 +310,7 @@ class ElfinderConnector:
         except:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, u'#%s' % target) }
 
-    def _tmb(self, targets, debug=False):
+    def _tmb(self, targets):
         """
         **Command**: Return new automatically-created thumbnails list. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -331,7 +327,7 @@ class ElfinderConnector:
 
         return result
     
-    def _file(self, target, request=None, download=False, debug=False):
+    def _file(self, target, request=None, download=False):
         """
         **Command**: Get a file
         
@@ -396,7 +392,7 @@ class ElfinderConnector:
 
         return result
 
-    def _size(self, targets, debug=False):
+    def _size(self, targets):
         """
         **Command**: Count total file size of all directories in ``targets`` param.
         
@@ -420,7 +416,7 @@ class ElfinderConnector:
 
         return { 'size' : size }
 
-    def _mkdir(self, target, name, debug=False):
+    def _mkdir(self, target, name):
         """
         **Command**: Create a new directory. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -438,7 +434,7 @@ class ElfinderConnector:
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKDIR, name, e) }
 
-    def _mkfile(self, target, name, debug=False):
+    def _mkfile(self, target, name):
         """
         **Command**: Create a new, empty file. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -456,7 +452,7 @@ class ElfinderConnector:
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKFILE, name, e) }
 
-    def _rename(self, target, name, debug=False):
+    def _rename(self, target, name):
         """
         **Command**: Rename a file. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -476,7 +472,7 @@ class ElfinderConnector:
         except Exception as e: 
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, rm['name'], e) }
 
-    def _duplicate(self, targets, suffix='copy', debug=False):
+    def _duplicate(self, targets, suffix='copy'):
         """
         **Command**: Duplicate a file. Create a copy with "{suffix} %d" suffix,
         where "%d" is an integer and ``suffix`` an argument that defaults to `'copy`'.
@@ -502,7 +498,7 @@ class ElfinderConnector:
         
         return result
     
-    def _rm(self, targets, debug=False):
+    def _rm(self, targets):
         """
         **Command**: Remove directories or files. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -526,7 +522,7 @@ class ElfinderConnector:
 
         return result
     
-    def _upload(self, target, FILES, html=False, debug=False):
+    def _upload(self, target, FILES, html=False):
         """
         **Command**: Save uploaded files. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -558,7 +554,7 @@ class ElfinderConnector:
 
         return result
 
-    def _paste(self, targets, dst, cut=False, debug=False):
+    def _paste(self, targets, dst, cut=False):
         """
         **Command**: Copy/move ``targets`` files into a new destination ``dst``.
         
@@ -590,7 +586,7 @@ class ElfinderConnector:
 
         return result
 
-    def _get(self, target, debug=False):
+    def _get(self, target):
         """
         **Command**: Return file contents. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -617,7 +613,7 @@ class ElfinderConnector:
         
         return {'content' : content }
 
-    def _put(self, target, content, debug=False):
+    def _put(self, target, content):
         """
        **Command**:  Save ``content`` into a text file. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -634,7 +630,7 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_SAVE, volume.path(target), e)}
 
-    def _extract(self, target, debug=False):
+    def _extract(self, target):
         """
         **Command**:  Extract files from archive. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -652,7 +648,7 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_EXTRACT, volume.path(target), e)}
 
-    def _archive(self, targets, type_, debug=False):
+    def _archive(self, targets, type_):
         """
         **Command**: Create a new archive file containing all files in
         ``targets`` param. 
@@ -672,7 +668,7 @@ class ElfinderConnector:
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_ARCHIVE, e)}
 
-    def _search(self, q, debug=False):
+    def _search(self, q):
         """
         **Command**: Search files for ``q``. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -684,7 +680,7 @@ class ElfinderConnector:
             result += volume.search(q)
         return {'files' : result}
 
-    def _info(self, targets, options=False, debug=False):
+    def _info(self, targets, options=False):
         """
         **Command**: Return file info (used by client "places" ui). This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -705,7 +701,7 @@ class ElfinderConnector:
 
         return {'files' : files}
 
-    def _dim(self, target, debug=False):
+    def _dim(self, target):
         """
         **Command**: Return image dimensions. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
@@ -716,7 +712,7 @@ class ElfinderConnector:
         except (VolumeNotFoundError, FileNotFoundError, NotAnImageError):
             return {}
 
-    def _resize(self, target, width, height, mode=None, x='0', y='0', degree='0', debug=False):
+    def _resize(self, target, width, height, mode=None, x='0', y='0', degree='0'):
         """
         **Command**: Resize ``target`` image. This method should not be invoked 
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
