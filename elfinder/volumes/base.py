@@ -359,7 +359,7 @@ class ElfinderVolumeDriver(object):
     
     def setMimesFilter(self, mimes):
         """
-        Set mimetypes allowed to display to client
+        Set mimetypes allowed to display in client
         """
         self._onlyMimes = mimes
 
@@ -985,11 +985,11 @@ class ElfinderVolumeDriver(object):
             raise PermissionDeniedError()
         return self.remove(self.decode(hash_))
     
-    def search(self, q, mimes):
+    def search(self, q):
         """
         Search files
         """
-        return self.doSearch(self._root, q, mimes)
+        return self.doSearch(self._root, q)
 
     def dimensions(self, hash_):
         """
@@ -1372,7 +1372,7 @@ class ElfinderVolumeDriver(object):
                     dirs += self.gettree(p, deep-1)
         return dirs
 
-    def doSearch(self, path, q, mimes):
+    def doSearch(self, path, q):
         """
         Recursive files search
         """
@@ -1395,7 +1395,7 @@ class ElfinderVolumeDriver(object):
                 result.append(stat)
 
             if stat['mime'] == 'directory' and stat['read'] and not 'alias' in  stat:
-                result += self.doSearch(p, q, mimes)
+                result += self.doSearch(p, q)
 
         return result
         

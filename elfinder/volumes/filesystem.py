@@ -455,6 +455,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Extract files from archive
         """
+        
+        #TODO: Take mime filters into consideration
+        
         basename = self._basename(path)
         dirname = self._dirname(path)
 
