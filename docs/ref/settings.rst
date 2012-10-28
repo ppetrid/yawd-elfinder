@@ -88,7 +88,9 @@ Each *optionset* can define one of the following keys:
 
 * ``debug``: indicates if we're on debug mode: ``True`` or ``False``
  
-* ``roots``: a list of root directories that elfinder will load on its instatiation. For example, the following will load both `pdfs` and `docs` directories in your media root folder.::
+* ``roots``: a list of root directories that elfinder will load on its
+ instatiation. For example, the following will load both `pdfs` and `docs`
+ directories::
             
       ELFINDER_CONNECTOR_OPTION_SETS = {
          'myoptionset' : {
