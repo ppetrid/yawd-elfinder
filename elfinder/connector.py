@@ -39,6 +39,12 @@ class ElfinderConnector:
     }
 
     def __init__(self, opts, session = None):
+        
+        try: #initialize opts if they are incorrect
+            opts['roots']
+        except TypeError, KeyError:
+            opts = {'roots' : []}
+
         self._volumes = {}
         self._default = None
         self._loaded = False
@@ -49,9 +55,7 @@ class ElfinderConnector:
         self._mountErrors = []
         
         #TODO: Use signals instead of the original connector's binding mechanism
-        if not 'roots' in opts:
-            opts['roots'] = []
-        
+
         #for root in self.getNetVolumes():
         #    opts['roots'].append(root)
 
