@@ -126,11 +126,11 @@ in future releases.
 path
 ++++
 
-Default: ``/``
+Default: ``'/'``
 
 The path to the root directory. Each driver may change the default value.
 For example, the :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-driver set this to the project's ``MEDIA_ROOT`` setting by default.
+driver sets this to the project's ``MEDIA_ROOT`` setting by default.
 
 .. _setting-alias:
 
@@ -159,7 +159,12 @@ Open this path on initial request instead of root path.
 URL
 +++
 
-**Required**. The URL corresponding to the root directory. E.g. ``'%sfiles/' % settings.MEDIA_URL``
+Default: ``''``
+
+The URL corresponding to the root directory (e.g. ``'http://example.com/files/'``.
+Each driver may provide a different default value or require it. For example,
+the :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
+sets this to  the ``MEDIA_URL``setting by default.
 
 .. _setting-treeDeep:
 

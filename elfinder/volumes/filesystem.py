@@ -32,8 +32,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     #*********************************************************************#
     
     def mount(self, opts):
+        """
+        Override the original mount method so that
+        ``path`` and ``URL`` settings point to the ``MEDIA_ROOT``
+        and ``MEDIA_URL`` Django settings by default.
+        """
+
         if not 'path' in opts or not opts['path']:
             self._options['path'] = settings.MEDIA_ROOT
+            
+        if not 'URL' in opts or not opts['URL']:
+            self._options['URL'] = settings.MEDIA_URL
 
         return super(ElfinderVolumeLocalFileSystem, self).mount(opts)
     
