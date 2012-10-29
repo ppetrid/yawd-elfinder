@@ -56,8 +56,6 @@ class ElfinderVolumeDriver(object):
         self._tmbPathWritable = False
         #Thumbnails base URL
         self._tmbURL = ''
-        #Thumbnails size in px
-        self._tmbSize = 48
         #Archivers config
         self._archivers = {
             'create' : {},
@@ -326,7 +324,10 @@ class ElfinderVolumeDriver(object):
             })
 
         self._treeDeep = int(self._options['treeDeep']) if int(self._options['treeDeep']) > 0 else 1
-        self._tmbSize  = int(self._options['tmbSize']) if int(self._options['tmbSize']) > 0 else 48
+        
+        if not isinstance(self._options['tmbSize'], (int, long)) or self._options['tmbSize'] == 0: 
+            self._options['tmbSize'] = 48
+        
         self._URL = self._options['URL']
         if self._URL and re.search(r"[^/?&=]$", self._URL):
             self._URL += '/'
@@ -1596,7 +1597,7 @@ class ElfinderVolumeDriver(object):
         self._copy(path, self._tmbPath, name)
         tmb  = self._joinPath(self._tmbPath, name)
 
-        tmbSize = self._tmbSize        
+        tmbSize = self._options['tmbSize']        
         try:
             im = Image.open(tmb)
             s = im.size
