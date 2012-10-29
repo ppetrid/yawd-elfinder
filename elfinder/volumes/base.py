@@ -50,8 +50,6 @@ class ElfinderVolumeDriver(object):
         self._startPath = ''
         #Base URL
         self._URL = ''
-        #Thumbnails dir path
-        self._tmbPath = ''
         #Is thumbnails dir writable
         self._tmbPathWritable = False
         #Archivers config
@@ -168,8 +166,8 @@ class ElfinderVolumeDriver(object):
         By default set thumbnail path.
         """
         #set thumbnails path
-        path = self._joinPath(self._root, self._options['tmbPath'])
-        if path:
+        if self._options['tmbPath']:
+            path = self._joinPath(self._root, self._options['tmbPath'])
             try:
                 stat = self.stat(path)
             except os.error:
@@ -180,8 +178,10 @@ class ElfinderVolumeDriver(object):
                     stat = None
 
             if stat and stat['mime'] == 'directory' and stat['read']:
-                self._tmbPath = path
+                self._options['tmbPath'] = path
                 self._tmbPathWritable = stat['write']
+            else:
+                self._options['tmbPath'] = ''
                 
     def _cachekeys(self):
         """
@@ -1544,14 +1544,14 @@ class ElfinderVolumeDriver(object):
         """
         Return thumnbnail name if exists
         """
-        if self._options['tmbURL'] and self._tmbPath:
+        if self._options['tmbURL'] and self._options['tmbPath']:
             #file itself thumnbnail
-            if path.startswith(self._tmbPath):
+            if path.startswith(self._options['tmbPath']):
                 return self._basename(path)
 
             name = self.tmbname(stat)
             try:
-                self.stat(self._joinPath(self._tmbPath, name))
+                self.stat(self._joinPath(self._options['tmbPath'], name))
                 return name
             except os.error:
                 return None
@@ -1560,7 +1560,7 @@ class ElfinderVolumeDriver(object):
         """
         Return True if thumnbnail for required file can be created
         """
-        return self._tmbPathWritable and not path.startswith(self._tmbPath) and stat['mime'].startswith('image') 
+        return self._tmbPathWritable and not path.startswith(self._options['tmbPath']) and stat['mime'].startswith('image') 
 
     def canResize(self, path, stat):
         """
@@ -1579,8 +1579,8 @@ class ElfinderVolumeDriver(object):
             raise PermissionDeniedError()
 
         name = self.tmbname(stat)
-        self._copy(path, self._tmbPath, name)
-        tmb  = self._joinPath(self._tmbPath, name)
+        self._copy(path, self._options['tmbPath'], name)
+        tmb  = self._joinPath(self._options['tmbPath'], name)
 
         tmbSize = self._options['tmbSize']        
         try:
@@ -1729,7 +1729,7 @@ class ElfinderVolumeDriver(object):
             for p in self._scandir(self.decode(stat['hash'])):
                 self.rmTmb(self.stat(p))
         elif 'tmb' in stat and stat['tmb'] and stat['tmb'] != '1':
-            tmb = self._joinPath(self._tmbPath, stat['tmb'])
+            tmb = self._joinPath(self._options['tmbPath'], stat['tmb'])
             try:
                 self.stat(tmb)
                 self._unlink(tmb)
