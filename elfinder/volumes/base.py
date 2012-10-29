@@ -59,8 +59,6 @@ class ElfinderVolumeDriver(object):
             'create' : {},
             'extract' : {}
         }
-        #How many subdirs levels return for tree
-        self._treeDeep = 1
         #Today 24:00 timestamp
         self._today = 0
         #Yesterday 24:00 timestamp
@@ -321,7 +319,6 @@ class ElfinderVolumeDriver(object):
                 'read' : False
             })
 
-        self._treeDeep = int(self._options['treeDeep']) if int(self._options['treeDeep']) > 0 else 1
         self._URL = self._urlize(self._options['URL'])
         self._options['tmbURL'] = self._urlize(self._options['tmbURL'])
         self._nameValidator = self._options['acceptedName'] if 'acceptedName' in self._options and self._options['acceptedName'] else None
@@ -494,7 +491,7 @@ class ElfinderVolumeDriver(object):
         if dir_['mime'] != 'directory':
             return []
         
-        dirs = self.gettree(path, (deep - 1) if deep > 0 else (self._treeDeep - 1), self.decode(exclude) if exclude else None)
+        dirs = self.gettree(path, (deep - 1) if deep > 0 else (self._options['treeDeep'] - 1), self.decode(exclude) if exclude else None)
         dirs[:0] = [dir_]
         return dirs
     

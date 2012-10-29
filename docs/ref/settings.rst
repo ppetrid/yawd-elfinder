@@ -89,7 +89,7 @@ Each *optionset* can define one of the following keys:
 * ``debug``: indicates if we're on debug mode: ``True`` or ``False``
  
 * ``roots``: a list of root directories that elfinder will load on its
- instatiation. For example, the following will load both `pdfs` and `docs`
+ instantiation. For example, the following will load both `pdfs` and `docs`
  directories::
             
       ELFINDER_CONNECTOR_OPTION_SETS = {
@@ -165,7 +165,7 @@ treeDeep
 Default: ``1``
 
 The depth of sub-directories (recursive directory listings) that should 
-return per request.
+return per request. It must be greater than zero.
 
 .. _setting-separator:
 
@@ -184,7 +184,7 @@ tmbPath
 
 Default: ``'.tmb'``
 
-The directory under which auto-generated thumbnails will be placed.
+The directory under which auto-generated thumbnails will be placed. 
 
 .. _setting-tmbPathMode:
 
@@ -527,3 +527,24 @@ like python's built-in :class:`tarfile.TarFile` class.
 
 For more information see `<http://docs.python.org/library/tarfile.html>`_ and
 view yawd-elfinder's :class:`elfinder.utils.archivers.ZipFileArchiver` source code.
+
+.. _setting-maxArchiveSize:
+
+maxArchiveSize
+++++++++++++++
+
+Default: ``0``
+
+The maximum allowed size of a new archive file. `0` means that there
+is no size restriction.
+
+
+************************
+Volume-specific settings
+************************
+
+Each volume driver may define a set of extra configuration options,
+depending on its needs. For example, the 
+:class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
+supports `dirMode`, `fileMode` and `quarantine`.
+ 
