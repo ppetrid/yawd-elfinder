@@ -513,9 +513,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
                 if m and m.group(0):
                     name = name[0:(len(name)-len(m.group(0)))]
 
-                test = u'%s%s%s' % (dirname, self._separator, name)
+                test = self._joinPath(dirname, name)
                 if os.path.exists(test) or os.path.islink(test):
-                    name = self.uniqueName(name, '-', False)
+                    name = self.uniqueName(dirname, name, '-', False)
                 
                 result  = self._joinPath(dirname, name)
                 archive = self._joinPath(result, basename)

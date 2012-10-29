@@ -674,7 +674,7 @@ class ElfinderVolumeDriver(object):
 
         path = self.decode(hash_)
         dir_  = self._dirname(path)
-        name = self.uniqueName(self._basename(path), ' %s ' % suffix)
+        name = self.uniqueName(dir_, self._basename(path), ' %s ' % suffix)
 
         if not self.allowCreate(dir_, name):
             raise PermissionDeniedError
@@ -740,7 +740,7 @@ class ElfinderVolumeDriver(object):
                     raise NamedError(ElfinderErrorMessages.ERROR_NOT_REPLACE, uploaded_file.name)
                 self.remove(test)
             else:
-                name = self.uniqueName(uploaded_file.name, '-', False)
+                name = self.uniqueName(dstpath, uploaded_file.name, '-', False)
         except os.error: #file does not exist
             pass
         
@@ -804,7 +804,7 @@ class ElfinderVolumeDriver(object):
                 if not self.remove(test):
                     raise NamedError(ElfinderErrorMessages.ERROR_REPLACE, self._path(test))
             else:
-                name = self.uniqueName(name, ' ', False)
+                name = self.uniqueName(destination, name, ' ', False)
         except os.error:
             pass
         
@@ -922,7 +922,7 @@ class ElfinderVolumeDriver(object):
             files.append(self._basename(path))
         
         name = '%s.%s' % (files[0] if len(files) == 1 else 'Archive', archiver['ext'])
-        name = self.uniqueName(name, '')
+        name = self.uniqueName(dir_, name, '')
         
         self.clearcache()
         path = self._archive(dir_, files, name, archiver)
@@ -1053,7 +1053,7 @@ class ElfinderVolumeDriver(object):
             return re.search(self._nameValidator, name)
         return True
 
-    def uniqueName(self, name, suffix = ' copy', checkNum=True):
+    def uniqueName(self, dir_, name, suffix = ' copy', checkNum=True):
         """
         Return new unique name based on file name and suffix
         """
@@ -1071,7 +1071,8 @@ class ElfinderVolumeDriver(object):
             i = 1
             name += suffix
 
-        while i:
+        max_ = i+100000
+        while i <= max_:
             n = '%s%s%s' % (name, (i if i > 0 else ''), ext)
             try:
                 self.stat(self._joinPath(dir_, n))
@@ -1079,6 +1080,8 @@ class ElfinderVolumeDriver(object):
                 self.clearcache()
                 return n
             i+=1
+
+        return name+md5(dir_)+ext
     
     #*********************** file stat *********************#
     
