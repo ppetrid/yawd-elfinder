@@ -22,11 +22,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         #Required to count total archive files size
         self._archiveSize = 0
         
-        self._options['alias']  = '' #alias to replace root dir_ name
         self._options['dirMode']  = 0755 #new dirs mode
         self._options['fileMode'] = 0644 #new files mode
         self._options['quarantine'] = '.quarantine' #quarantine folder name - required to check archive (must be hidden)
-        self._options['maxArcFilesSize'] = 0 #max allowed archive files size (0 - no limit)
         
     #*********************************************************************#
     #*                        INIT AND CONFIGURE                         *#
@@ -498,7 +496,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
                 raise Exception(ElfinderErrorMessages.ERROR_ARC_SYMLINKS)
 
             #check max files size
-            if self._options['maxArcFilesSize'] > 0 and self._options['maxArcFilesSize'] < self._archiveSize:
+            if self._options['maxArchiveSize'] > 0 and self._options['maxArchiveSize'] < self._archiveSize:
                 raise Exception(ElfinderErrorMessages.ERROR_ARC_MAXSIZE)
 
             #archive contains one item - extract in archive dir

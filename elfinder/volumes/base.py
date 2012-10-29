@@ -76,6 +76,8 @@ class ElfinderVolumeDriver(object):
             'id' : '',
             #root directory path
             'path' : '/',
+            #alias to replace root dir_ name
+            'alias' : '',
             #root url, not set to disable sending URL to client (replacement for old "fileURL" option)
             'URL' : '',
             #open this path on initial request instead of root path
@@ -139,6 +141,8 @@ class ElfinderVolumeDriver(object):
             'archiveMimes' : [],
             #Manual config for archivers. See example below. Leave empty for auto detect
             'archivers' : {},
+            #max allowed archive files size (0 - no limit)
+            'maxArchiveSize' : 0
         }
 
         #Defaults permissions
