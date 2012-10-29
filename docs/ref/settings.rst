@@ -109,14 +109,14 @@ Each root can define one of the following keys:
 id
 ++
 
-Required. A unique string representing this root.
+**Required**. A unique string representing this root.
 
 .. _setting-driver:
 
 driver
 ++++++
 
-Required. The volume driver class. yawd-elfinder currently implements the
+**Required**. The volume driver class. yawd-elfinder currently implements the
 :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem` driver. This can be used to retrieve
 files located in your filesystem. Plans exist to implement an FTP driver
 in future releases.
@@ -126,7 +126,11 @@ in future releases.
 path
 ++++
 
-Required. The path to the root directory.
+Default: ``/``
+
+The path to the root directory. Each driver may change the default value.
+For example, the :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
+driver set this to the project's ``MEDIA_ROOT`` setting by default.
 
 .. _setting-alias:
 
@@ -155,7 +159,7 @@ Open this path on initial request instead of root path.
 URL
 +++
 
-Required. The URL corresponding to the root directory. E.g. ``'%sfiles/' % settings.MEDIA_URL``
+**Required**. The URL corresponding to the root directory. E.g. ``'%sfiles/' % settings.MEDIA_URL``
 
 .. _setting-treeDeep:
 

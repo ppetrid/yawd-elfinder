@@ -254,7 +254,7 @@ class ElfinderConnector:
             for id_ in self._volumes:
                 files += self._volumes[id_].tree(exclude=target)
         
-        #get current working directory files list and add to files if not exists in it
+        #get current working directory files list and add to files if not already present
         try:
             ls = volume.scandir(cwd['hash'])
         except Exception as e:

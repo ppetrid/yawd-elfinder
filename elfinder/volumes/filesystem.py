@@ -1,6 +1,7 @@
 import os, re, time, shutil, inspect, magic
 from tarfile import TarFile
 from PIL import Image
+from django.conf import settings
 from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError
 from elfinder.utils.archivers import ZipFileArchiver
 from base import ElfinderVolumeDriver
@@ -32,7 +33,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     
     def mount(self, opts):
         if not 'path' in opts or not opts['path']:
-            raise Exception(_('Path undefined.'))
+            self._options['path'] = settings.MEDIA_ROOT
 
         return super(ElfinderVolumeLocalFileSystem, self).mount(opts)
     
