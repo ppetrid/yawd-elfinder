@@ -54,8 +54,6 @@ class ElfinderVolumeDriver(object):
         self._tmbPath = ''
         #Is thumbnails dir writable
         self._tmbPathWritable = False
-        #Thumbnails base URL
-        self._tmbURL = ''
         #Archivers config
         self._archivers = {
             'create' : {},
@@ -324,18 +322,8 @@ class ElfinderVolumeDriver(object):
             })
 
         self._treeDeep = int(self._options['treeDeep']) if int(self._options['treeDeep']) > 0 else 1
-        
-        if not isinstance(self._options['tmbSize'], (int, long)) or self._options['tmbSize'] == 0: 
-            self._options['tmbSize'] = 48
-        
-        self._URL = self._options['URL']
-        if self._URL and re.search(r"[^/?&=]$", self._URL):
-            self._URL += '/'
-
-        self._tmbURL = self._options['tmbURL'] if self._options['tmbURL'] else ''
-        if self._tmbURL and re.search(r"[^/?&=]$", self._tmbURL):
-            self._tmbURL += '/'
-        
+        self._URL = self._urlize(self._options['URL'])
+        self._options['tmbURL'] = self._urlize(self._options['tmbURL'])
         self._nameValidator = self._options['acceptedName'] if 'acceptedName' in self._options and self._options['acceptedName'] else None
 
         self._checkArchivers()
@@ -373,7 +361,7 @@ class ElfinderVolumeDriver(object):
         return {
             'path' : self._path(self.decode(hash_)),
             'url' : self._URL,
-            'tmbUrl' : self._tmbURL,
+            'tmbUrl' : self._options['tmbURL'],
             'disabled' : self._disabled,
             'separator' : self._separator,
             'copyOverwrite' : self._options['copyOverwrite'],
@@ -1210,7 +1198,7 @@ class ElfinderVolumeDriver(object):
             else:
                 #for files - check for thumbnails
                 p = stat['target'] if 'target' in stat else path
-                if self._tmbURL and not 'tmb' in stat and self.canCreateTmb(p, stat):
+                if self._options['tmbURL'] and not 'tmb' in stat and self.canCreateTmb(p, stat):
                     tmb = self.gettmb(p, stat)
                     stat['tmb'] = tmb if tmb else 1
         
@@ -1559,7 +1547,7 @@ class ElfinderVolumeDriver(object):
         """
         Return thumnbnail name if exists
         """
-        if self._tmbURL and self._tmbPath:
+        if self._options['tmbURL'] and self._tmbPath:
             #file itself thumnbnail
             if path.startswith(self._tmbPath):
                 return self._basename(path)
@@ -1764,6 +1752,11 @@ class ElfinderVolumeDriver(object):
         """
         return 'locked' in stat and stat['locked']
     
+    def _urlize(self, url):
+        if re.search("[^/?&=]$", url):
+            url += '/'
+        return url
+
     #*********************************************************************#
     #*             API TO BE IMPLEMENTED IN SUB-CLASSES                  *#
     #*********************************************************************#
