@@ -55,9 +55,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         super(ElfinderVolumeLocalFileSystem, self).configure()
 
         #if no thumbnails url - try to detect it
-        if not self._options['tmbURL'] and self._URL:
+        if not self._options['tmbURL'] and self._options['URL']:
             if self._options['tmbPath'].startswith(self._root):
-                self._options['tmbURL'] = self._urlize(self._URL + self._options['tmbPath'][len(self._root)+1:].replace(self._separator, '/'))
+                self._options['tmbURL'] = self._urlize(self._options['URL'] + self._options['tmbPath'][len(self._root)+1:].replace(self._separator, '/'))
 
         #check quarantine dir
         if self._options['quarantine']:

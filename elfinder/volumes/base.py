@@ -48,8 +48,6 @@ class ElfinderVolumeDriver(object):
         self._rootName = ''
         #Default directory to open
         self._startPath = ''
-        #Base URL
-        self._URL = ''
         #Is thumbnails dir writable
         self._tmbPathWritable = False
         #Archivers config
@@ -319,7 +317,7 @@ class ElfinderVolumeDriver(object):
                 'read' : False
             })
 
-        self._URL = self._urlize(self._options['URL'])
+        self._options['URL'] = self._urlize(self._options['URL'])
         self._options['tmbURL'] = self._urlize(self._options['tmbURL'])
         self._nameValidator = self._options['acceptedName'] if 'acceptedName' in self._options and self._options['acceptedName'] else None
 
@@ -357,7 +355,7 @@ class ElfinderVolumeDriver(object):
         """
         return {
             'path' : self._path(self.decode(hash_)),
-            'url' : self._URL,
+            'url' : self._options['URL'],
             'tmbUrl' : self._options['tmbURL'],
             'disabled' : self._disabled,
             'separator' : self._separator,
@@ -1366,8 +1364,8 @@ class ElfinderVolumeDriver(object):
 
             if q in name:
                 stat['path'] = self._path(p)
-                if self._URL and not 'url' in stat:
-                    stat['url'] = self._URL + p[len(self._root) + 1:].replace(self._separator, '/')
+                if self._options['URL'] and not 'url' in stat:
+                    stat['url'] = self._options['URL'] + p[len(self._root) + 1:].replace(self._separator, '/')
                 result.append(stat)
 
             if stat['mime'] == 'directory' and stat['read'] and not 'alias' in  stat:
