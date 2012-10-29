@@ -13,12 +13,16 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     _driverId = 'l'
     
     def __init__(self):
+        """
+        Override the original __init__ method to define some 
+        ElfinderVolumeLocalFileSystem-specific options.
+        """
         super(ElfinderVolumeLocalFileSystem, self).__init__()
         
         #Required to count total archive files size
         self._archiveSize = 0
         
-        self._options['alias']    = '' #alias to replace root dir_ name
+        self._options['alias']  = '' #alias to replace root dir_ name
         self._options['dirMode']  = 0755 #new dirs mode
         self._options['fileMode'] = 0644 #new files mode
         self._options['quarantine'] = '.quarantine' #quarantine folder name - required to check archive (must be hidden)
@@ -28,12 +32,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     #*                        INIT AND CONFIGURE                         *#
     #*********************************************************************#
     
+    def mount(self, opts):
+        if not 'path' in opts or not opts['path']:
+            raise Exception(_('Path undefined.'))
+
+        return super(ElfinderVolumeLocalFileSystem, self).mount(opts)
+    
     def configure(self):
         """
-        Configure after successfull mount.
+        Configure after successful mount.
         """
         self._aroot = os.path.realpath(self._root)
-        root = self.stat(self._root)
 
         if self._options['quarantine']:
             self._attributes.append({
@@ -44,15 +53,10 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
                 'hidden': True
             })
 
-        #chek thumbnails path
-        if self._options['tmbPath']:
-            #tmb path set as dirname under root dir if it doe not contain a separator
-            self._options['tmbPath'] = '%s%s%s' % (self._root, self._separator, self._options['tmbPath']) if not self._separator in self._options['tmbPath'] else self._normpath(self._options['tmbPath']) 
-
         super(ElfinderVolumeLocalFileSystem, self).configure()
 
         #if no thumbnails url - try to detect it
-        if root['read'] and not self._tmbURL and self._URL:
+        if not self._tmbURL and self._URL:
             if self._tmbPath.startswith(self._root):
                 self._tmbURL = self._URL + self._tmbPath[len(self._root)+1:].replace(self._separator, '/')
                 if re.search("[^/?&=]$", self._tmbURL):
@@ -60,15 +64,15 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         #check quarantine dir
         if self._options['quarantine']:
-            self._quarantine = '%s%s%s' % (self._root, self._separator, self._options['quarantine'])
+            self._quarantine = self._joinPath(self._root, self._options['quarantine'])
             isdir = os.path.isdir(self._quarantine)
-            
+
         if not self._options['quarantine'] or (isdir and not os.access(self._quarantine, os.W_OK)):
             self._archivers['extract'] = []
             self._disabled.append('extract')
         elif self._options['quarantine'] and not isdir:
             try:
-                self._mkdir(self._root, self._options['quarantine'])
+                self._mkdir(self._quarantine)
             except os.error:
                 self._archivers['extract'] = []
                 self._disabled.append('extract')
@@ -89,11 +93,11 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         return os.path.basename(path)
 
-    def _joinPath(self, dir_, name):
+    def _joinPath(self, path1, path2):
         """
-        Join dir name and file name and return full path
+        Join two paths and return full path. If the latter path is absolute, return it. 
         """
-        return os.path.join(dir_, name)
+        return os.path.join(path1, path2)
     
     def _normpath(self, path):
         """
@@ -239,11 +243,10 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     
     #********************  file/dir manipulations *************************#
     
-    def _mkdir(self, path, name, mode=None):
+    def _mkdir(self, path, mode=None):
         """
         Create dir and return created dir path or raise an os.error
         """
-        path = u'%s%s%s' % (path, self._separator, name)
         os.mkdir(path, mode) if mode else os.mkdir(path, self._options['dirMode']) 
         return path
 
@@ -463,12 +466,12 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         if self._quarantine:
             dir_name = u'%s%s' % (str(time.time()).replace(' ', '_'), basename)
-            dir_ = u'%s%s%s' % (self._quarantine, self._separator, dir_name)
-            archive = u'%s%s%s' % (dir_, self._separator, basename)
+            dir_ = self._joinPath(self._quarantine, dir_name)
+            archive = self._joinPath(dir_, basename)
             
-            self._mkdir(self._quarantine, dir_name)
+            self._mkdir(dir_)
             os.chmod(dir_, 0777)
-            
+
             #copy in quarantine
             self._copy(path, dir_, basename)
             
@@ -512,12 +515,12 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
                 test = u'%s%s%s' % (dirname, self._separator, name)
                 if os.path.exists(test) or os.path.islink(test):
-                    name = self.uniqueName(dirname, name, '-', False)
+                    name = self.uniqueName(name, '-', False)
                 
-                result  = u'%s%s%s' % (dirname, self._separator, name)
-                archive = u'%s%s%s' % (result, self._separator, basename)
+                result  = self._joinPath(dirname, name)
+                archive = self._joinPath(result, basename)
 
-                self._mkdir(dirname, name)
+                self._mkdir(result)
                 self._copy(path, result, basename)
                 
                 self._unpack(archive, arc)

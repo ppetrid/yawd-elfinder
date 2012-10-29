@@ -13,7 +13,7 @@ class ElfinderVolumeDriver(object):
     """
     
     #The driver id.
-    #Must be started from letter and contains [a-z0-9]
+    #Must started with a letter and contain only [a-z0-9]
     #Used as part of volume id
     _driverId = 'a'
     
@@ -75,7 +75,7 @@ class ElfinderVolumeDriver(object):
         self._options = {
             'id' : '',
             #root directory path
-            'path' : '',
+            'path' : '/',
             #root url, not set to disable sending URL to client (replacement for old "fileURL" option)
             'URL' : '',
             #open this path on initial request instead of root path
@@ -110,7 +110,7 @@ class ElfinderVolumeDriver(object):
             'uploadDeny' : [],
             #order to proccess uploadAllow and uploadDeny options
             'uploadOrder' : ['deny', 'allow'],
-            #maximum upload file size. NOTE - this is size for every uploaded files
+            #maximum upload file size. NOTE - applies to each uploaded file individually
             'uploadMaxSize' : 0,
             #files dates format. CURRENTLY NOT IMPLEMENTED
             'dateFormat' : 'j M Y H:i',
@@ -163,33 +163,24 @@ class ElfinderVolumeDriver(object):
         self._uploadMaxSize = 0
         #List of disabled client's commands
         self._disabled = []
-    
-    def init(self):
-        """
-        Prepare driver before mount volume.
-        Return True if volume is ready.
-        """
-        return True
         
     def configure(self):
         """
-        Configure after successfull mount.
-        By default set thumbnails path.
-        Thumbnails are stored in local filesystem regardless of the volume
+        Configure after successful mount.
+        By default set thumbnail path.
         """
         #set thumbnails path
-        path = self._options['tmbPath']
+        path = self._joinPath(self._root, self._options['tmbPath'])
         if path:
             try:
                 stat = self.stat(path)
             except os.error:
-                split = path.split(self._separator)
                 try:
-                    self._mkdir(path=self._separator.join(split[:-1]), name=split[-1], mode=self._options['tmbPathMode'])
+                    self._mkdir(path=path, mode=self._options['tmbPathMode'])
                     stat = self.stat(path)
                 except os.error:
                     stat = None
-            
+
             if stat and stat['mime'] == 'directory' and stat['read']:
                 self._tmbPath = path
                 self._tmbPathWritable = stat['write']
@@ -238,9 +229,6 @@ class ElfinderVolumeDriver(object):
         Return True if volume available for read or write,
         False - otherwise
         """
-        if not 'path' in opts or not opts['path']:
-            raise Exception(_('Path undefined.'))
-        
         
         self._options.update(opts)
         if self._options['id']:
@@ -277,8 +265,6 @@ class ElfinderVolumeDriver(object):
         self._today = time.mktime(datetime.date.today().timetuple())
         self._yesterday = self._today-86400
 
-        self.init()
-
         #assign some options to private members
         self._onlyMimes = self._options['onlyMimes']
         self._uploadAllow = self._options['uploadAllow'] if 'uploadAllow' in self._options else []
@@ -305,7 +291,7 @@ class ElfinderVolumeDriver(object):
             root = self.stat(self._root)
         except os.error:
             #attempt to create it
-            self._mkdir(self._separator.join(self._root.split(self._separator)[:-1]), self._basename(self._root))
+            self._mkdir(self._root)
             root = self.stat(self._root)
             raise DirNotFoundError
 
@@ -607,7 +593,7 @@ class ElfinderVolumeDriver(object):
         except:
             self.clearcache()
 
-        return self.stat(self._mkdir(path, name))
+        return self.stat(self._mkdir(dst))
     
     def mkfile(self, dst, name):
         """
@@ -688,7 +674,7 @@ class ElfinderVolumeDriver(object):
 
         path = self.decode(hash_)
         dir_  = self._dirname(path)
-        name = self.uniqueName(dir_, self._basename(path), ' %s ' % suffix)
+        name = self.uniqueName(self._basename(path), ' %s ' % suffix)
 
         if not self.allowCreate(dir_, name):
             raise PermissionDeniedError
@@ -754,7 +740,7 @@ class ElfinderVolumeDriver(object):
                     raise NamedError(ElfinderErrorMessages.ERROR_NOT_REPLACE, uploaded_file.name)
                 self.remove(test)
             else:
-                name = self.uniqueName(dstpath, uploaded_file.name, '-', False)
+                name = self.uniqueName(uploaded_file.name, '-', False)
         except os.error: #file does not exist
             pass
         
@@ -818,7 +804,7 @@ class ElfinderVolumeDriver(object):
                 if not self.remove(test):
                     raise NamedError(ElfinderErrorMessages.ERROR_REPLACE, self._path(test))
             else:
-                name = self.uniqueName(destination, name, ' ', False)
+                name = self.uniqueName(name, ' ', False)
         except os.error:
             pass
         
@@ -936,7 +922,7 @@ class ElfinderVolumeDriver(object):
             files.append(self._basename(path))
         
         name = '%s.%s' % (files[0] if len(files) == 1 else 'Archive', archiver['ext'])
-        name = self.uniqueName(dir_, name, '')
+        name = self.uniqueName(name, '')
         
         self.clearcache()
         path = self._archive(dir_, files, name, archiver)
@@ -1067,7 +1053,7 @@ class ElfinderVolumeDriver(object):
             return re.search(self._nameValidator, name)
         return True
 
-    def uniqueName(self, dir_, name, suffix = ' copy', checkNum=True):
+    def uniqueName(self, name, suffix = ' copy', checkNum=True):
         """
         Return new unique name based on file name and suffix
         """
@@ -1085,8 +1071,7 @@ class ElfinderVolumeDriver(object):
             i = 1
             name += suffix
 
-        max_ = i+100000
-        while i <= max_:
+        while i:
             n = '%s%s%s' % (name, (i if i > 0 else ''), ext)
             try:
                 self.stat(self._joinPath(dir_, n))
@@ -1094,8 +1079,6 @@ class ElfinderVolumeDriver(object):
                 self.clearcache()
                 return n
             i+=1
-
-        return name+md5(dir_)+ext
     
     #*********************** file stat *********************#
     
@@ -1575,7 +1558,7 @@ class ElfinderVolumeDriver(object):
 
             name = self.tmbname(stat)
             try:
-                self.stat(u'%s%s%s' % (self._tmbPath, self._separator, name))
+                self.stat(self._joinPath(self._tmbPath, name))
                 return name
             except os.error:
                 return None
@@ -1604,7 +1587,7 @@ class ElfinderVolumeDriver(object):
 
         name = self.tmbname(stat)
         self._copy(path, self._tmbPath, name)
-        tmb  = u'%s%s%s' % (self._tmbPath, self._separator, name)
+        tmb  = self._joinPath(self._tmbPath, name)
 
         tmbSize = self._tmbSize        
         try:
@@ -1753,7 +1736,7 @@ class ElfinderVolumeDriver(object):
             for p in self._scandir(self.decode(stat['hash'])):
                 self.rmTmb(self.stat(p))
         elif 'tmb' in stat and stat['tmb'] and stat['tmb'] != '1':
-            tmb = '%s%s%s' % (self._tmbPath, self._separator, stat['tmb'])
+            tmb = self._joinPath(self._tmbPath, stat['tmb'])
             try:
                 self.stat(tmb)
                 self._unlink(tmb)
@@ -1789,10 +1772,9 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-    def _joinPath(self, dir_, name):
+    def _joinPath(self, path1, path2):
         """
-        Join dir name and file name and return full path.
-        Some drivers (db) use int as path - so we give to concat path to driver itself
+        Join two paths and return full path. If the latter path is absolute, return it.
         """
         raise NotImplementedError
 
@@ -1888,7 +1870,7 @@ class ElfinderVolumeDriver(object):
     
     #********************  file/dir manipulations *************************#
 
-    def _mkdir(self, path, name):
+    def _mkdir(self, path, mode):
         """
         Create dir and return created dir path or false on failed
         """
