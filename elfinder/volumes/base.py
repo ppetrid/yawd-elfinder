@@ -28,9 +28,6 @@ class ElfinderVolumeDriver(object):
     #Store files movedsubstr( or overwrited files info
     _removed = []
     
-    #Cache by folders
-    _dirsCache = []
-    
     #*********************************************************************#
     #*                            INITIALIZATION                         *#
     #*********************************************************************#
