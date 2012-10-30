@@ -22,9 +22,6 @@ class ElfinderVolumeDriver(object):
     #Directory separator - required by client
     _separator = os.sep
     
-    #Mimetypes allowed to display
-    _onlyMimes = []
-    
     #Store files movedsubstr( or overwrited files info
     _removed = []
     
@@ -93,7 +90,7 @@ class ElfinderVolumeDriver(object):
             'copyJoin' : True,
             #on upload -  if True - old file will be replaced with new one, if False new file get name - original_name-number.ext
             'uploadOverwrite' : True,
-            #filter mime types to show
+            #filter mime types to allow
             'onlyMimes' : [],
             #mimetypes allowed to upload
             'uploadAllow' : [],
@@ -259,7 +256,6 @@ class ElfinderVolumeDriver(object):
         self._yesterday = self._today-86400
 
         #assign some options to private members
-        self._onlyMimes = self._options['onlyMimes']
         self._uploadAllow = self._options['uploadAllow'] if 'uploadAllow' in self._options else []
         self._uploadDeny = self._options['uploadDeny'] if 'uploadDeny' in self._options else []
         self._uploadOrder = self._options['uploadOrder']
@@ -331,7 +327,7 @@ class ElfinderVolumeDriver(object):
         """
         Set mimetypes allowed to display in client
         """
-        self._onlyMimes = mimes
+        self._options['onlyMimes'] = mimes
 
     def root(self):
         """
@@ -372,7 +368,7 @@ class ElfinderVolumeDriver(object):
         """
         Return True if mime is in required mimes list
         """
-        mimes = mimes if mimes else self._onlyMimes
+        mimes = mimes if mimes else self._options['onlyMimes']
         if not mimes:
             return empty
 
