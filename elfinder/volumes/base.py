@@ -22,9 +22,6 @@ class ElfinderVolumeDriver(object):
     #Directory separator - required by client
     _separator = os.sep
     
-    #Store files movedsubstr( or overwrited files info
-    _removed = []
-    
     #*********************************************************************#
     #*                            INITIALIZATION                         *#
     #*********************************************************************#
@@ -44,6 +41,8 @@ class ElfinderVolumeDriver(object):
         self._rootName = ''
         #Default directory to open
         self._startPath = ''
+        #Store files movedsubstr( or overwrited files info
+        self._removed = []
         #Is thumbnails dir writable
         self._tmbPathWritable = False
         #Archivers config
@@ -98,7 +97,7 @@ class ElfinderVolumeDriver(object):
             'uploadDeny' : [],
             #order to proccess uploadAllow and uploadDeny options
             'uploadOrder' : ['deny', 'allow'],
-            #maximum upload file size. NOTE - applies to each uploaded file individually
+            #maximum upload file size. Set as number or string with unit - "10M", "500K", "1G". NOTE - applies to each uploaded file individually
             'uploadMaxSize' : 0,
             #files dates format. CURRENTLY NOT IMPLEMENTED
             'dateFormat' : 'j M Y H:i',
@@ -148,9 +147,6 @@ class ElfinderVolumeDriver(object):
         self._uploadDeny = []
         #Order to validate uploadAllow and uploadDeny
         self._uploadOrder = []
-        #Maximum allowed upload file size.
-        #Set as number or string with unit - "10M", "500K", "1G"
-        self._uploadMaxSize = 0
         
     def configure(self):
         """
@@ -269,9 +265,9 @@ class ElfinderVolumeDriver(object):
                 n = 1048576
             elif unit == 'g':
                 n = 1073741824
-            self._uploadMaxSize = int(self._options['uploadMaxSize'][:-1]) * n
+            self._options['uploadMaxSize'] = int(self._options['uploadMaxSize'][:-1]) * n
         except TypeError:
-            pass
+            self._options['uploadMaxSize'] = 0
         
         self._rootName = self._basename(self._root) if not self._options['alias'] else self._options['alias']
         
@@ -340,6 +336,12 @@ class ElfinderVolumeDriver(object):
         Return root or startPath hash
         """
         return self.encode(self._startPath if self._startPath else self._root)
+    
+    def uploadMaxSize(self):
+        """
+        Return the upload max size.
+        """
+        return self._options['uploadMaxSize']
     
     def options(self, hash_):
         """
@@ -666,8 +668,6 @@ class ElfinderVolumeDriver(object):
         Save uploaded file. 
         On success return array with new file stat and with removed file hash (if existed file was replaced)
         """
-        
-        #TODO: Check if after replacing calls to _save(), mimetype(), the methods are no longer needed
 
         if self.commandDisabled('upload'):
             raise PermissionDeniedError
@@ -702,7 +702,7 @@ class ElfinderVolumeDriver(object):
         if not upload:
             raise Exception(ElfinderErrorMessages.ERROR_UPLOAD_FILE_MIME)
 
-        if self._uploadMaxSize > 0 and uploaded_file.size > self._uploadMaxSize:
+        if self._options['uploadMaxSize'] > 0 and uploaded_file.size > self._options['uploadMaxSize']:
             raise Exception(ElfinderErrorMessages.ERROR_UPLOAD_FILE_SIZE)
 
         dstpath = self.decode(dst)
@@ -1481,7 +1481,7 @@ class ElfinderVolumeDriver(object):
 
             try:
                 fp = volume.open(src)
-                path = self._save(fp, destination, name, mime, **kwargs)
+                path = self._save(fp, destination, name, **kwargs)
                 volume.close(fp, src)
             except:
                 raise NamedError(ElfinderErrorMessages.ERROR_COPY, errpath)
@@ -1492,7 +1492,6 @@ class ElfinderVolumeDriver(object):
         """
         Remove file/ recursive remove dir
         """
-
         try:
             stat = self.stat(path)
         except os.error:
@@ -1506,6 +1505,9 @@ class ElfinderVolumeDriver(object):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, self._path(path))
 
         if stat['mime'] == 'directory':
+            if self.commandDisabled('rmdir'):
+                raise PermissionDeniedError()
+            
             for p in self._scandir(path):
                 self.remove(p)
 
@@ -1574,7 +1576,7 @@ class ElfinderVolumeDriver(object):
 
         tmbSize = self._options['tmbSize']        
         try:
-            im = Image.open(tmb)
+            im = self._openimage(tmb)
             s = im.size
         except:
             self._unlink(tmb)
@@ -1592,17 +1594,11 @@ class ElfinderVolumeDriver(object):
             #Resize and crop if image bigger than thumbnail
             if not ((s[0] > tmbSize and s[1] <= tmbSize) or (s[0] <= tmbSize and s[1] > tmbSize)) or (s[0] > tmbSize and s[1] > tmbSize):
                 try:
-                    self.imgResize(tmb, tmbSize, tmbSize, True, False, 'png')
+                    s = self.imgResize(tmb, tmbSize, tmbSize, True, False, 'png')
                 except:
                     self._unlink(tmb)
                     raise
-                
-            try: #reopen image to get its size
-                im = Image.open(tmb)
-            except:
-                self.unlink(tmb)
-                raise NotAnImageError
-            
+
             s = im.size
             x = int((s[0] - tmbSize)/2) if s[0] > tmbSize else 0
             y = int((s[1] - tmbSize)/2) if s[1] > tmbSize else 0
@@ -1615,7 +1611,7 @@ class ElfinderVolumeDriver(object):
         else:
             try:
                 im.thumbnail((tmbSize, tmbSize), Image.ANTIALIAS)
-                im.save(tmb, 'png')
+                self._saveimage(im, tmb, 'png')
                 self.imgSquareFit(tmb, tmbSize, tmbSize, self._options['tmbBgColor'], 'png' )
             except:
                 self._unlink(tmb)
@@ -1625,10 +1621,10 @@ class ElfinderVolumeDriver(object):
 
     def imgResize(self, path, width, height, keepProportions = False, resizeByBiggerSide = True, destformat = None):
         """
-        Resize image
+        Resize image and return the new size.
         """
         try:
-            im = Image.open(path)
+            im = self._openimage(path)
             s = im.size
         except:
             raise NotAnImageError
@@ -1655,16 +1651,17 @@ class ElfinderVolumeDriver(object):
                 size_w = width
 
         resized = im.resize((size_w, size_h), Image.ANTIALIAS)
-        resized.save(path, destformat if destformat else im.format)
+        #TODO: save image
+        self._saveimage(resized, path, destformat if destformat else im.format)
         
-        return path
+        return resized.size
 
     def imgCrop(self, path, width, height, x, y, destformat = None):
         """
         Crop image
         """
         try:
-            im = Image.open(path)
+            im = self._openimage(path)
         except:
             raise NotAnImageError
 
@@ -1678,7 +1675,7 @@ class ElfinderVolumeDriver(object):
         Put image to square
         """
         try:
-            im = Image.open(path)
+            im = self._openimage(path)
         except:
             raise NotAnImageError
 
@@ -1689,7 +1686,7 @@ class ElfinderVolumeDriver(object):
         else: #do not use a mask if file is not in RGBA mode.
             bg.paste(im, ((width-im.size[0])/2, (height-im.size[1])/2))
 
-        bg.save(path, destformat if destformat else im.format)
+        self._saveimage(bg, path, destformat if destformat else im.format)
 
         return path
 
@@ -1698,7 +1695,7 @@ class ElfinderVolumeDriver(object):
         Rotate image
         """
         try:
-            tempim = Image.open(path)
+            tempim = self._openimage(path)
             im = tempim.convert('RGBA')
         except:
             raise NotAnImageError
@@ -1707,8 +1704,8 @@ class ElfinderVolumeDriver(object):
         bg = Image.new('RGB', rotated.size, bgcolor)
         
         result = Image.composite(rotated, bg, rotated)
-        result.save(path, destformat if destformat else im.format)
-
+        self._saveimage(result, path, destformat if destformat else im.format)
+        
         return path
 
     def rmTmb(self, stat):
@@ -1726,6 +1723,56 @@ class ElfinderVolumeDriver(object):
             except:
                 pass
             self.clearcache()
+
+    #******************* archive files **********************#
+    
+    def _checkArchivers(self):
+        """
+        Detect available archivers
+        """
+        self._archivers = {
+            'create'  : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
+                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
+                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
+                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
+                         },
+            'extract' : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
+                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
+                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
+                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
+                         }
+        }
+        
+        #control available archive types from the options
+        if 'archiveMimes' in self._options and self._options['archiveMimes']:
+            for mime in self._archivers['create']:
+                if not mime in self._options['archiveMimes']:
+                    del self._archivers['create'][mime]
+        
+        #manualy add archivers
+        if 'create' in self._options['archivers']:
+            for mime, archiver in self._options['archivers']['create'].items():
+                try:
+                    conf = archiver['archiver']
+                    archiver['ext']
+                except:
+                    continue
+                #check if conf is class and implements open, add and close methods
+                if re.match(r'application/', mime) and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'add') and callable(getattr(conf, 'add')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
+                    self._archivers['create'][mime] = archiver
+
+        if 'extract' in self._options['archivers']:
+            for mime, archiver in self._options['archivers']['extract'].items():
+                try:
+                    conf = archiver['archiver']
+                    archiver['ext']
+                except:
+                    continue
+                #check if conf is class and implements open, extractall and close methods
+                if re.match(r'application/', mime) and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'extractall') and callable(getattr(conf, 'extractall')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
+                    self._archivers['extract'][mime] = archiver
+                    
+    #****************util methods ********************#
     
     def isHidden(self, stat):
         """
@@ -1743,34 +1790,12 @@ class ElfinderVolumeDriver(object):
         if re.search("[^/?&=]$", url):
             url += '/'
         return url
-
-    #*********************************************************************#
-    #*             API TO BE IMPLEMENTED IN SUB-CLASSES                  *#
-    #*********************************************************************#
     
     def _dirname(self, path):
         """
         Return parent directory path
         """
-        return os.path.dirname(path)
-
-    def _basename(self, path):
-        """
-        Return file name
-        """
-        return os.path.basename(path)
-
-    def _joinPath(self, path1, path2):
-        """
-        Join two paths and return full path. If the latter path is absolute, return it.
-        """
-        return os.path.join(path1, path2)
-
-    def _normpath(self, path):
-        """
-        Return normalized path
-        """
-        return os.path.normpath(path)
+        raise NotImplementedError
 
     def _relpath(self, path):
         """
@@ -1799,7 +1824,40 @@ class ElfinderVolumeDriver(object):
             return path == parent or path.startswith('%s%s' % (parent, self._separator))
         except:
             return False
+        
+    def _isabs(self, path):
+        """
+        Check if path is abs
+        """
+        if self._separator =='\\':
+            return not re.match(r'([a-zA-Z]+:)?\\$') is None
+        return path.startswith(os.sep)
+        
+    #*********************************************************************#
+    #*                  API TO BE IMPLEMENTED IN SUB-CLASSES             *#
+    #*********************************************************************#
 
+    def _basename(self, path):
+        """
+        Return file name
+        """
+        raise NotImplementedError
+
+    def _joinPath(self, path1, path2):
+        """
+        Join two paths and return full path. If the latter path is
+        absolute, return it.
+        """
+        raise NotImplementedError
+
+    def _normpath(self, path):
+        """
+        Return normalized path.
+        """
+        raise NotImplementedError
+    
+    #************************* file/dir info *********************# 
+    
     def _stat(self, path):
         """
         Return stat for given path.
@@ -1815,8 +1873,6 @@ class ElfinderVolumeDriver(object):
         Must raise an os.error on fail
         """
         raise NotImplementedError
-
-    #***************** file stat ********************#
 
     def _subdirs(self, path):
         """
@@ -1858,6 +1914,18 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
     
+    def _openimage(self, path):
+        """
+        Open an image file.
+        """
+        raise NotImplementedError
+    
+    def _saveimage(self, im, path, form):
+        """
+        Save an image file
+        """
+        raise NotImplementedError
+    
     #********************  file/dir manipulations *************************#
 
     def _mkdir(self, path, mode):
@@ -1872,19 +1940,19 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-    def _symlink(self, source, targetDir, name):
+    def _symlink(self, source, target_dir, name):
         """
         Create symlink
         """
         raise NotImplementedError
 
-    def _copy(self, source, targetDir, name):
+    def _copy(self, source, target_dir, name):
         """
         Copy file into another file (only inside one volume)
         """
         raise NotImplementedError
 
-    def _move(self, source, targetDir, name):
+    def _move(self, source, target_dir, name):
         """
         Move file into another parent dir.
         Return new file path or false.
@@ -1904,8 +1972,7 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-
-    def _save(self, fp, dir_, name, mime, **kwargs):
+    def _save(self, fp, dir_, name, **kwargs):
         """
         Create new file and write into it from file pointer.
         Return the new file path
@@ -1941,49 +2008,3 @@ class ElfinderVolumeDriver(object):
         Create archive and return its path
         """
         raise NotImplementedError
-
-    def _checkArchivers(self):
-        """
-        Detect available archivers
-        """
-        self._archivers = {
-            'create'  : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
-                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
-                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
-                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
-                         },
-            'extract' : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
-                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
-                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
-                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
-                         }
-        }
-        
-        #control available archive types from the options
-        if 'archiveMimes' in self._options and self._options['archiveMimes']:
-            for mime in self._archivers['create']:
-                if not mime in self._options['archiveMimes']:
-                    del self._archivers['create'][mime]
-        
-        #manualy add archivers
-        if 'create' in self._options['archivers']:
-            for mime, archiver in self._options['archivers']['create'].items():
-                try:
-                    conf = archiver['archiver']
-                    archiver['ext']
-                except:
-                    continue
-                #check if conf is class and implements open, add and close methods
-                if not re.match(r'application/', mime) is None and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'add') and callable(getattr(conf, 'add')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
-                    self._archivers['create'][mime] = archiver
-
-        if 'extract' in self._options['archivers']:
-            for mime, archiver in self._options['archivers']['extract'].items():
-                try:
-                    conf = archiver['archiver']
-                    archiver['ext']
-                except:
-                    continue
-                #check if conf is class and implements open, extractall and close methods
-                if not re.match(r'application/', mime) is None and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'extractall') and callable(getattr(conf, 'extractall')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
-                    self._archivers['extract'][mime] = archiver
