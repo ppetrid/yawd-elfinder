@@ -203,7 +203,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Create file and return it's path or False on failed
         """
-        path = u'%s%s%s' % (path, self._separator, name)
+        path = self._joinPath(path, name)
 
         open(path, 'w').close()
         os.chmod(path, self._options['fileMode'])
