@@ -1651,7 +1651,6 @@ class ElfinderVolumeDriver(object):
                 size_w = width
 
         resized = im.resize((size_w, size_h), Image.ANTIALIAS)
-        #TODO: save image
         self._saveimage(resized, path, destformat if destformat else im.format)
         
         return resized.size
@@ -1666,7 +1665,7 @@ class ElfinderVolumeDriver(object):
             raise NotAnImageError
 
         cropped = im.crop((x, y, width+x, height+y))
-        cropped.save(path, destformat if destformat else im.format)
+        self._saveimage(cropped, path, destformat if destformat else im.format)
 
         return path
 
@@ -1718,7 +1717,6 @@ class ElfinderVolumeDriver(object):
         elif 'tmb' in stat and stat['tmb'] and stat['tmb'] != '1':
             tmb = self._joinPath(self._options['tmbPath'], stat['tmb'])
             try:
-                self.stat(tmb)
                 self._unlink(tmb)
             except:
                 pass
