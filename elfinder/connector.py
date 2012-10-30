@@ -66,9 +66,6 @@ class ElfinderConnector:
                 volume = class_()
             except TypeError:
                 self._mountErrors.append('Driver "%s" does not exist' % class_)
-            except:
-                #TODO: should we fail silently?
-                raise
 
             try:
                 volume.mount(o)
@@ -190,7 +187,7 @@ class ElfinderConnector:
         
         if debug:
             result['debug'] = {
-                'connector' : 'yawd-python',
+                'connector' : 'yawd-elfinder',
                 'time' : time.time() - self._time,
                 'upload' : self._uploadDebug,
                 'volumes' : [v.debug() for v in self._volumes.values()],
@@ -206,9 +203,10 @@ class ElfinderConnector:
         Return:
             An array with following elements:
                 :cwd:          opened directory information
-                :files:        opened directory content [and dirs tree if kwargs['tree'] is ``True``]
-                :api:          api version (if kwargs['init'] is ``True``)
-                :uplMaxSize:   The maximum allowed upload size (if kwargs['init'] is ``True``)
+                :options:      the volume options
+                :files:        opened directory content [and dirs tree if 'tree' argument is ``True``]
+                :api:          api version (if 'init' argument is ``True``)
+                :uplMaxSize:   The maximum allowed upload size (if 'init' argument is ``True``)
                 :error:        on failed
                 
         This method should not be invoked 
@@ -273,7 +271,7 @@ class ElfinderConnector:
         if init:
             result['api'] = self._version
             result['netDrivers'] = self._netDrivers.keys()
-            #TODO: Do we need Upload Max Size?
+            result['uplMaxSize'] = volume.uploadMaxSize()
         
         return result
 
