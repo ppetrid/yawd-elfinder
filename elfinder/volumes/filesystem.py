@@ -1,9 +1,7 @@
-import os, re, time, shutil, inspect, magic
-from tarfile import TarFile
+import os, re, time, shutil, magic
 from PIL import Image
 from django.conf import settings
 from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError
-from elfinder.utils.archivers import ZipFileArchiver
 from base import ElfinderVolumeDriver
 
 class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
@@ -86,74 +84,20 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     #*********************************************************************#
     #*                               FS API                              *#
     #*********************************************************************#
-    
-    def _dirname(self, path):
-        """
-        Return parent directory path
-        """
-        return os.path.dirname(path)
-
-    def _basename(self, path):
-        """
-        Return file name
-        """
-        return os.path.basename(path)
-
-    def _joinPath(self, path1, path2):
-        """
-        Join two paths and return full path. If the latter path is absolute, return it. 
-        """
-        return os.path.join(path1, path2)
-    
-    def _normpath(self, path):
-        """
-        Return normalized path
-        """
-        return os.path.normpath(path)
-    
-    def _relpath(self, path):
-        """
-        Return file path related to root dir
-        """
-        return '' if path == self._root else path[len(self._root)+1:]
-    
-    def _abspath(self, path):
-        """
-        Convert path related to root dir into real path
-        """
-        return self._root if path == self._separator else self._joinPath(self._root, path)
-    
-    def _path(self, path):
-        """
-        Return fake path started from root dir
-        """
-        return self._rootName if path == self._root else self._joinPath(self._rootName, self._relpath(path))
-    
-    def _inpath(self, path, parent):
-        """
-        Return True if path is children of parent
-        """
-        try:
-            return path == parent or path.startswith('%s%s' % (parent, self._separator))
-        except:
-            return False
-    
-    #***************** file stat ********************#
 
     def _stat(self, path):
         """
         Return stat for given path.
-        If file does not exist, it returns empty array or False.
         Stat contains following fields:
         - (int)    size    file size in b. required
         - (int)    ts      file modification time in unix time. required
         - (string) mime    mimetype. required for folders, others - optionally
         - (bool)   read    read permissions. required
         - (bool)   write   write permissions. required
-        - (bool)   locked  is object locked. optionally
-        - (bool)   hidden  is object hidden. optionally
         - (string) alias   for symlinks - link target path relative to root path. optionally
         - (string) target  for symlinks - link target path. optionally
+        
+        Must raise an os.error on fail
         """
         stat = {}
 
@@ -169,7 +113,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             stat['target'] = target
             path  = target
             size  = os.lstat(path).st_size
-        else:
+        else: #raise os.error on fail
             size = os.path.getsize(path)
         
         dir_ = os.path.isdir(path)
@@ -187,10 +131,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Return True if path is dir and has at least one childs directory
         """
         for entry in os.listdir(path):
-            p = path+self._separator+entry
+            p = self._joinPath(path, entry)
             if os.path.isdir(entry) and not self.attr(path=p, name='hidden'):
                 return True
-        return False
     
     def _dimensions(self, path, mime):
         """
@@ -231,7 +174,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     def _scandir(self, path):
         """
         Return files list in directory.
-        The '.' and '..' special directories are ommited.
+        The '.' and '..' special directories are omitted.
         """
         return map(lambda x: u'%s%s%s' % (path, self._separator, x), os.listdir(path))
 
@@ -342,52 +285,6 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         f = open(path, 'w')
         f.write(content)
         f.close()
-
-    def _checkArchivers(self):
-        """
-        Detect available archivers
-        """
-        self._archivers = {
-            'create'  : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
-                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
-                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
-                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
-                         },
-            'extract' : { 'application/x-tar' : { 'ext' : 'tar' , 'archiver' : TarFile }, 
-                         'application/x-gzip' : { 'ext' : 'tgz' , 'archiver' : TarFile },
-                         'application/x-bzip2' : { 'ext' : 'tbz' , 'archiver' : TarFile },
-                         'application/zip' : { 'ext' : 'zip' , 'archiver' : ZipFileArchiver }
-                         }
-        }
-        
-        #control available archive types from the options
-        if 'archiveMimes' in self._options and self._options['archiveMimes']:
-            for mime in self._archivers['create']:
-                if not mime in self._options['archiveMimes']:
-                    del self._archivers['create'][mime]
-        
-        #manualy add archivers
-        if 'create' in self._options['archivers']:
-            for mime, archiver in self._options['archivers']['create'].items():
-                try:
-                    conf = archiver['archiver']
-                    archiver['ext']
-                except:
-                    continue
-                #check if conf is class and implements open, add and close methods
-                if not re.match(r'application/', mime) is None and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'add') and callable(getattr(conf, 'add')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
-                    self._archivers['create'][mime] = archiver
-
-        if 'extract' in self._options['archivers']:
-            for mime, archiver in self._options['archivers']['extract'].items():
-                try:
-                    conf = archiver['archiver']
-                    archiver['ext']
-                except:
-                    continue
-                #check if conf is class and implements open, extractall and close methods
-                if not re.match(r'application/', mime) is None and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'extractall') and callable(getattr(conf, 'extractall')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
-                    self._archivers['extract'][mime] = archiver
 
     def _archive(self, dir_, files, name, arc):
         """
