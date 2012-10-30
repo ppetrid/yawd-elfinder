@@ -73,13 +73,13 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         if not self._options['quarantine'] or (isdir and not os.access(self._quarantine, os.W_OK)):
             self._archivers['extract'] = []
-            self._disabled.append('extract')
+            self._options['disabled'].append('extract')
         elif self._options['quarantine'] and not isdir:
             try:
                 self._mkdir(self._quarantine)
             except os.error:
                 self._archivers['extract'] = []
-                self._disabled.append('extract')
+                self._options['disabled'].append('extract')
             
     #*********************************************************************#
     #*                               FS API                              *#
@@ -132,7 +132,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         for entry in os.listdir(path):
             p = self._joinPath(path, entry)
-            if os.path.isdir(entry) and not self.attr(path=p, name='hidden'):
+            if os.path.isdir(p) and not self.attr(path=p, name='hidden'):
                 return True
     
     def _dimensions(self, path, mime):
@@ -176,7 +176,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Return files list in directory.
         The '.' and '..' special directories are omitted.
         """
-        return map(lambda x: u'%s%s%s' % (path, self._separator, x), os.listdir(path))
+        return map(lambda x: self._joinPath(path, x), os.listdir(path))
 
     def _fopen(self, path, mode='rb'):
         """
@@ -344,9 +344,8 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             return True
         
         if os.path.isdir(path):
-            for name in self._scandir(path):
-                p = u'%s%s%s' % (path, self._separator, name)
-                if os.path.islink(p) or not self.nameAccepted(name):
+            for p in self._scandir(path):
+                if os.path.islink(p) or not self.nameAccepted(self._basename(p)):
                     return True
                 elif os.path.isdir(p) and self._findSymlinks(p):
                     return True

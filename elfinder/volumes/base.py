@@ -157,8 +157,6 @@ class ElfinderVolumeDriver(object):
         #Maximum allowed upload file size.
         #Set as number or string with unit - "10M", "500K", "1G"
         self._uploadMaxSize = 0
-        #List of disabled client's commands
-        self._disabled = []
         
     def configure(self):
         """
@@ -282,7 +280,6 @@ class ElfinderVolumeDriver(object):
         except TypeError:
             pass
         
-        self._disabled = self._options['disabled'] if 'disabled' in self._options else []    
         self._rootName = self._basename(self._root) if not self._options['alias'] else self._options['alias']
         
         try:
@@ -359,7 +356,7 @@ class ElfinderVolumeDriver(object):
             'path' : self._path(self.decode(hash_)),
             'url' : self._options['URL'],
             'tmbUrl' : self._options['tmbURL'],
-            'disabled' : self._disabled,
+            'disabled' : self._options['disabled'],
             'separator' : self._separator,
             'copyOverwrite' : self._options['copyOverwrite'],
             'archivers' : {
@@ -372,7 +369,7 @@ class ElfinderVolumeDriver(object):
         """
         Return True if command disabled in options
         """
-        return cmd in self._disabled
+        return cmd in self._options['disabled']
     
     def mimeAccepted(self, mime, mimes = [], empty = True):
         """
@@ -1079,10 +1076,12 @@ class ElfinderVolumeDriver(object):
         """
         Check file attribute
         """
+        
         if not name in self._defaults:
             return False
 
         perm = None
+
         #TODO: replace this with signals??
         if self._access:
             if hasattr(self._access, '__call__'):
@@ -1093,11 +1092,11 @@ class ElfinderVolumeDriver(object):
 
         path = self._relpath(path).replace(self._separator, '/')
         path = u'/%s' % path
-
+            
         for attrs in self._attributes:
             if name in attrs and 'pattern' in attrs and re.search(attrs['pattern'], path):
                 perm = attrs[name]
-        
+                
         return (self._defaults[name] if not val else val) if not perm else perm
 
     def allowCreate(self, dir_, name):
