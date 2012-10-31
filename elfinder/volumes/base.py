@@ -17,9 +17,9 @@ class ElfinderVolumeDriver(object):
     #The driver id.
     #Must started with a letter and contain only [a-z0-9]
     #Used as part of volume id
-    _driverId = 'a'
+    _driver_id = 'a'
     
-    #Directory separator - required by client
+    #Directory separator - required by the client
     _separator = os.sep
     
     #*********************************************************************#
@@ -38,24 +38,27 @@ class ElfinderVolumeDriver(object):
         #Root directory path
         self._root = ''
         #Root basename | alias
-        self._rootName = ''
+        self._root_name = ''
         #Default directory to open
-        self._startPath = ''
-        #Store files movedsubstr( or overwrited files info
+        self._start_path = ''
+        #Store moved  or overwrited files info
         self._removed = []
         #Is thumbnails dir writable
-        self._tmbPathWritable = False
+        self._tmb_path_writable = False
+        #Today 24:00 timestamp
+        self._today = 0
+        #Yesterday 24:00 timestamp
+        self._yesterday = 0
+        #list of attributes
+        self._attributes = []
+        #Default permissions
+        self._defaults = {}
         #Archivers config
         self._archivers = {
             'create' : {},
             'extract' : {}
         }
-        #Today 24:00 timestamp
-        self._today = 0
-        #Yesterday 24:00 timestamp
-        self._yesterday = 0
-        #A name pattern to ise for validitatinf path names
-        self._nameValidator = None
+        
         #Object configuration
         self._options = {
             'id' : '',
@@ -115,76 +118,21 @@ class ElfinderVolumeDriver(object):
             'acceptedName' : r'^[^\.].*', #<-- DONT touch this! Use constructor options to overwrite it!
             #callable to control file permissions
             'accessControl' : None,
-            #default permissions. not set hidden/locked here - take no effect
+            #default permissions. Do not set hidden/locked here - take no effect
             'defaults' : {
                 'read' : True,
                 'write' : True
             },
-            #files attributes
+            #a list of dictionaries, each defining a 'pattern' and values for at
+            #least one of the 'hidden', 'locked', 'read' and 'write' attributes for this pattern
             'attributes' : [],
             #Allowed archive's mimetypes to create. Leave empty for all available types.
             'archiveMimes' : [],
-            #Manual config for archivers. See example below. Leave empty for auto detect
+            #Manual config for archivers.
             'archivers' : {},
             #max allowed archive files size (0 - no limit)
             'maxArchiveSize' : 0
         }
-
-        #Defaults permissions
-        self._defaults = {
-            'read' : True,
-            'write' : True,
-            'locked' : False,
-            'hidden' : False
-        }
-        #Access control function/class
-        self._attributes = []
-        #Access control function/class
-        self._access = None
-        #Mime types allowed to upload
-        self._uploadAllow = []
-        #Mime types denied to upload
-        self._uploadDeny = []
-        #Order to validate uploadAllow and uploadDeny
-        self._uploadOrder = []
-        
-    def configure(self):
-        """
-        Configure after successful mount.
-        By default set thumbnail path.
-        """
-        #set thumbnails path
-        if self._options['tmbPath']:
-            path = self._joinPath(self._root, self._options['tmbPath'])
-            
-            self._attributes.append({
-                'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._relpath(path))),
-                'locked' : True,
-                'hidden' : True
-            })
-            
-            try:
-                stat = self.stat(path)
-            except os.error:
-                try:
-                    self._mkdir(path=path, mode=self._options['tmbPathMode'])
-                    stat = self.stat(path)
-                except os.error:
-                    stat = None
-
-            if stat and stat['mime'] == 'directory' and stat['read']:
-                self._options['tmbPath'] = path
-                self._tmbPathWritable = stat['write']          
-            else:
-                self._options['tmbPath'] = ''
-                
-    def _cachekeys(self):
-        """
-        Get volume cache key prefixes as a 2-item tuple. Directory keys
-        come first, followed by the file keys.
-        """
-        return ('%selfinder_dirs_cache' % self.id(),
-        '%selfinder_stats_cache' % self.id())
                 
     #*********************************************************************#
     #*                              PUBLIC API                           *#
@@ -194,13 +142,13 @@ class ElfinderVolumeDriver(object):
         """
         Return driver name.
         """
-        return self.__class__.__name__[len('elfinderdriver'):].lower()
+        return self.__class__.__name__[len('elfindervolume'):].lower()
     
-    def driverId(self):
+    def driver_id(self):
         """
         Return driver id. Used as a part of volume id.
         """
-        return self._driverId
+        return self._driver_id
     
     def id(self):
         """
@@ -219,15 +167,14 @@ class ElfinderVolumeDriver(object):
     
     def mount(self, opts):
         """
-        "Mount" volume.
-        Return True if volume available for read or write,
-        False - otherwise
+        "Mount" volume. Return True if volume available for read or write,
+        False otherwise.
         """
         
         self._options.update(opts)
 
         if self._options['id']:
-            self._id = '%s%s_' % (self._driverId, self._options['id'])
+            self._id = '%s%s_' % (self._driver_id, self._options['id'])
         else:
             raise Exception(_('No volume id found'))
         
@@ -254,37 +201,28 @@ class ElfinderVolumeDriver(object):
             #attributes must contain pattern and at least one rule
             if 'pattern' in a and len(a) > 1:
                 self._attributes.append(a)
-        
-        self._access = self._options['accessControl']
-        self._today = time.mktime(datetime.date.today().timetuple())
-        self._yesterday = self._today-86400
 
         #assign some options to private members
-        self._uploadAllow = self._options['uploadAllow'] if 'uploadAllow' in self._options else []
-        self._uploadDeny = self._options['uploadDeny'] if 'uploadDeny' in self._options else []
-        self._uploadOrder = self._options['uploadOrder']
-            
+        self._today = time.mktime(datetime.date.today().timetuple())
+        self._yesterday = self._today-86400
+        
+        #set uploadMaxSize  
         try:
-            unit = self._options['uploadMaxSize'][-1].lower()
-            n = 1
-            if unit == 'k':
-                n = 1024
-            elif unit == 'm':
-                n = 1048576
-            elif unit == 'g':
-                n = 1073741824
-            self._options['uploadMaxSize'] = int(self._options['uploadMaxSize'][:-1]) * n
-        except TypeError:
+            units = {
+                'k' : 1024,
+                'm' : 1048576,
+                'g' : 1073741824,
+                'b' : 1
+            }        
+            self._options['uploadMaxSize'] = int(self._options['uploadMaxSize'][:-1]) * units[self._options['uploadMaxSize'][-1].lower()]
+        except (TypeError, KeyError):
             self._options['uploadMaxSize'] = 0
         
-        self._rootName = self._basename(self._root) if not self._options['alias'] else self._options['alias']
+        self._root_name = self._basename(self._root) if not self._options['alias'] else self._options['alias']
         
         try:
             root = self.stat(self._root)
         except os.error:
-            #attempt to create it
-            self._mkdir(self._root)
-            root = self.stat(self._root)
             raise DirNotFoundError
 
         if (not 'read' in root or not root['read']) and (not 'write' in root and not root['write']):
@@ -297,9 +235,7 @@ class ElfinderVolumeDriver(object):
                     startpath = self._joinPath(self._root, self._options['startPath'])
                     start = self.stat(startpath)
                     if start['mime'] == 'directory' and start['read'] and not self.isHidden(start):
-                        self._startPath = startpath
-                        if startpath[-1] == self._options['separator']:
-                            self._startPath = startpath[:-1]
+                        self._start_path = self._normpath(startpath)
                 except os.error:
                     #Fail silently if startPath does not exist
                     pass
@@ -315,11 +251,41 @@ class ElfinderVolumeDriver(object):
 
         self._options['URL'] = self._urlize(self._options['URL'])
         self._options['tmbURL'] = self._urlize(self._options['tmbURL'])
-        self._nameValidator = self._options['acceptedName'] if 'acceptedName' in self._options and self._options['acceptedName'] else None
-
+        
         self._checkArchivers()
-        self.configure()
+        self._configure()
+        
         self._mounted = True
+        
+    def _configure(self):
+        """
+        Configure after successful mount.
+        By default set thumbnail path.
+        """
+        #set thumbnails path
+        if self._options['tmbPath']:
+            path = self._joinPath(self._root, self._options['tmbPath'])
+            
+            self._attributes.append({
+                'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._relpath(path))),
+                'locked' : True,
+                'hidden' : True
+            })
+            
+            try:
+                stat = self.stat(path)
+            except os.error:
+                try:
+                    self._mkdir(path=path, mode=self._options['tmbPathMode'])
+                    stat = self.stat(path)
+                except os.error:
+                    stat = None
+
+            if stat and stat['mime'] == 'directory' and stat['read']:
+                self._options['tmbPath'] = path
+                self._tmb_path_writable = stat['write']          
+            else:
+                self._options['tmbPath'] = ''
     
     def unmount(self):
         """
@@ -328,25 +294,19 @@ class ElfinderVolumeDriver(object):
         #TODO: maybe delete cache here
         pass
     
-    def setMimesFilter(self, mimes):
+    def set_mimes_filter(self, mimes):
         """
         Set mimetypes allowed to display in client
         """
         self._options['onlyMimes'] = mimes
-
-    def root(self):
-        """
-        Return root folder hash
-        """
-        return self.encode(self._root)
     
-    def defaultPath(self):
+    def default_path(self):
         """
         Return root or startPath hash
         """
-        return self.encode(self._startPath if self._startPath else self._root)
+        return self.encode(self._start_path if self._start_path else self._root)
     
-    def uploadMaxSize(self):
+    def upload_max_size(self):
         """
         Return the upload max size.
         """
@@ -369,7 +329,7 @@ class ElfinderVolumeDriver(object):
             }
         }
     
-    def commandDisabled(self, cmd):
+    def command_disabled(self, cmd):
         """
         Return True if command disabled in options
         """
@@ -564,7 +524,7 @@ class ElfinderVolumeDriver(object):
         Create directory and return dir info
         """
 
-        if self.commandDisabled('mkdir'):
+        if self.command_disabled('mkdir'):
             raise PermissionDeniedError
         
         if not self.nameAccepted(name):
@@ -594,7 +554,7 @@ class ElfinderVolumeDriver(object):
         Create empty file and return its info
         """
 
-        if self.commandDisabled('mkfile'):
+        if self.command_disabled('mkfile'):
             raise PermissionDeniedError
         
         if not self.nameAccepted(name):
@@ -623,7 +583,7 @@ class ElfinderVolumeDriver(object):
         Rename file and return file info
         """
 
-        if self.commandDisabled('rename'):
+        if self.command_disabled('rename'):
             raise PermissionDeniedError
         
         if not self.nameAccepted(name):
@@ -660,7 +620,7 @@ class ElfinderVolumeDriver(object):
         Create file copy with suffix "copy number" and return its info
         """
 
-        if self.commandDisabled('duplicate'):
+        if self.command_disabled('duplicate'):
             raise PermissionDeniedError
         
         #check if source file exists, throw FileNotFoundError if it doesn't
@@ -681,7 +641,7 @@ class ElfinderVolumeDriver(object):
         On success return array with new file stat and with removed file hash (if existed file was replaced)
         """
 
-        if self.commandDisabled('upload'):
+        if self.command_disabled('upload'):
             raise PermissionDeniedError
         
         try:
@@ -698,9 +658,9 @@ class ElfinderVolumeDriver(object):
         mime = uploaded_file.content_type 
 
         #logic based on http://httpd.apache.org/docs/2.2/mod/mod_authz_host.html#order
-        allow = self.mimeAccepted(mime, self._uploadAllow, None)
-        deny   = self.mimeAccepted(mime, self._uploadDeny, None)
-        if self._uploadOrder[0].lower() == 'allow': #['allow', 'deny'], default is to 'deny'
+        allow = self.mimeAccepted(mime, self._options['uploadAllow'], None)
+        deny   = self.mimeAccepted(mime, self._options['uploadDeny'], None)
+        if self._options['uploadOrder'][0].lower() == 'allow': #['allow', 'deny'], default is to 'deny'
             upload = False #default is deny
             if not deny and allow == True: #match only allow
                 upload = True
@@ -751,7 +711,7 @@ class ElfinderVolumeDriver(object):
         Paste files
         """
         
-        if self.commandDisabled('paste'):
+        if self.command_disabled('paste'):
             raise PermissionDeniedError
 
         #check if src file exists, throw FileNotFoundError if it doesn't
@@ -846,7 +806,7 @@ class ElfinderVolumeDriver(object):
         """
         Put content in text file and return file info.
         """
-        if self.commandDisabled('edit'):
+        if self.command_disabled('edit'):
             raise PermissionDeniedError()
         
         path = self.decode(hash_)
@@ -864,7 +824,7 @@ class ElfinderVolumeDriver(object):
         Extract files from archive
         """
 
-        if self.commandDisabled('extract'):
+        if self.command_disabled('extract'):
             raise PermissionDeniedError()
         
         file_ = self.file(hash_)
@@ -888,7 +848,7 @@ class ElfinderVolumeDriver(object):
         Add files to archive
         """
 
-        if self.commandDisabled('archive'):
+        if self.command_disabled('archive'):
             raise PermissionDeniedError()
 
         archiver = self._archivers['create'][mime] if mime in self._archivers['create'] else False
@@ -925,7 +885,7 @@ class ElfinderVolumeDriver(object):
         Resize image
         """
 
-        if self.commandDisabled('resize'):
+        if self.command_disabled('resize'):
             raise PermissionDeniedError()
         
         file_ = self.file(hash_)
@@ -959,7 +919,7 @@ class ElfinderVolumeDriver(object):
         """
         Remove file/dir
         """
-        if self.commandDisabled('rm'):
+        if self.command_disabled('rm'):
             raise PermissionDeniedError()
         return self.remove(self.decode(hash_))
     
@@ -1040,10 +1000,11 @@ class ElfinderVolumeDriver(object):
     
     def nameAccepted(self, name):
         """
-        Validate file name based on self._options['acceptedName'] regexp
+        Validate file name based on self._options['acceptedName'] regular
+        expression.
         """
-        if self._nameValidator:
-            return re.search(self._nameValidator, name)
+        if self._options['acceptedName']:
+            return re.search(self._options['acceptedName'], name)
         return True
 
     def uniqueName(self, dir_, name, suffix = ' copy', checkNum=True):
@@ -1087,8 +1048,8 @@ class ElfinderVolumeDriver(object):
             return False
 
         #TODO: replace this with signals??
-        if self._access and hasattr(self._access, '__call__'):
-            perm = self._access(attr, path, self)
+        if self._options['accessControl'] and hasattr(self._options['accessControl'], '__call__'):
+            perm = self._options['accessControl'](attr, path, self)
             if perm != None:
                 return perm
 
@@ -1102,10 +1063,10 @@ class ElfinderVolumeDriver(object):
         """
         Return fileinfo. Raises os.error if the path is invalid
         """
-        statCache = cache.get(self._cachekeys()[1], {})
+        statCache = cache.get(self._get_cache_keys()[1], {})
         if not path in statCache:
             self.updateCache(path, self._stat(path), statCache)
-            cache.set(self._cachekeys()[1], statCache)
+            cache.set(self._get_cache_keys()[1], statCache)
         return statCache[path]
 
     def updateCache(self, path, stat, statCache):
@@ -1120,7 +1081,7 @@ class ElfinderVolumeDriver(object):
 
         if path == self._root:
             stat['volumeid'] = self.id()
-            stat['name'] = self._rootName
+            stat['name'] = self._root_name
         else:
             if not 'name' in stat or not stat['name']:
                 stat['name'] = self._basename(path)
@@ -1169,28 +1130,28 @@ class ElfinderVolumeDriver(object):
         """
         Get stat for folder content and put in the cache.
         """
-        dirsCache = cache.get(self._cachekeys()[0], {})
+        dirsCache = cache.get(self._get_cache_keys()[0], {})
         dirsCache[path] = []
 
         for p in self._scandir(path):
             stat = self.stat(p)
             if not self.isHidden(stat):
                 dirsCache[path].append(p)
-        cache.set(self._cachekeys()[0], dirsCache)
+        cache.set(self._get_cache_keys()[0], dirsCache)
         return dirsCache[path]
 
-    def getDirsCache(self, path):
+    def _get_cached_dir(self, path):
         """
         Returns the cached dictionary for this path
         """
-        dirsCache = cache.get(self._cachekeys()[0], {})
-        return dirsCache[path] if path in dirsCache else []
+        cached_dirs = cache.get(self._get_cache_keys()[0], {})
+        return cached_dirs[path] if path in cached_dirs else []
 
     def clearcache(self):
         """
         Clean cached directory stat info
         """
-        for cachekey in self._cachekeys():
+        for cachekey in self._get_cache_keys():
             cache.delete(cachekey)
 
     def mimetype(self, path, name = ''):
@@ -1279,11 +1240,11 @@ class ElfinderVolumeDriver(object):
         If onlyMimes is set - return only dirs and files of required mimes
         """
         files = []
-        dirsCache = self.getDirsCache(path)
-        if not dirsCache:
-            dirsCache = self.cacheDir(path)
+        dir_ = self._get_cached_dir(path)
+        if not dir_:
+            dir_ = self._get_cached_dir(path)
 
-        for p in dirsCache:
+        for p in dir_:
             stat = self.stat(p)
             if not self.isHidden(stat):
                 files.append(stat)
@@ -1296,7 +1257,7 @@ class ElfinderVolumeDriver(object):
         """
         dirs = []
         
-        dirsCache = self.getDirsCache(path)
+        dirsCache = self._get_cached_dir(path)
         if not dirsCache:
             dirsCache = self.cacheDir(path)
 
@@ -1475,7 +1436,7 @@ class ElfinderVolumeDriver(object):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, self._path(path))
 
         if stat['mime'] == 'directory':
-            if self.commandDisabled('rmdir'):
+            if self.command_disabled('rmdir'):
                 raise PermissionDeniedError()
             
             for p in self._scandir(path):
@@ -1522,7 +1483,7 @@ class ElfinderVolumeDriver(object):
         """
         Return True if thumnbnail for required file can be created
         """
-        return self._tmbPathWritable and not path.startswith(self._options['tmbPath']) and stat['mime'].startswith('image') 
+        return self._tmb_path_writable and not path.startswith(self._options['tmbPath']) and stat['mime'].startswith('image') 
 
     def canResize(self, path, stat):
         """
@@ -1782,24 +1743,29 @@ class ElfinderVolumeDriver(object):
         Return fake path started from root dir.
         Required to show path on client side.
         """
-        return self._rootName if path == self._root else self._joinPath(self._rootName, self._relpath(path))
+        return self._root_name if path == self._root else self._joinPath(self._root_name, self._relpath(path))
      
     def _inpath(self, path, parent):
         """
-        Return true if path is children of parent
+        Return true if ``path`` is child of ``parent``
         """
-        try:
-            return path == parent or path.startswith('%s%s' % (parent, self._separator))
-        except:
-            return False
+        return path == parent or path.startswith('%s%s' % (parent, self._separator))
         
     def _isabs(self, path):
         """
-        Check if path is abs
+        Check if path is absolute.
         """
         if self._separator =='\\':
             return not re.match(r'([a-zA-Z]+:)?\\$') is None
         return path.startswith(os.sep)
+    
+    def _get_cache_keys(self):
+        """
+        Get volume cache key prefixes as a 2-item tuple. Directory keys
+        come first, followed by the file keys.
+        """
+        return ('%selfinder_dirs_cache' % self.id(),
+        '%selfinder_stats_cache' % self.id())
         
     #*********************************************************************#
     #*                  API TO BE IMPLEMENTED IN SUB-CLASSES             *#

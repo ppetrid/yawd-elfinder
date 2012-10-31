@@ -9,7 +9,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     elFinder driver for local filesystem.
     """
     
-    _driverId = 'l'
+    _driver_id = 'l'
     
     def __init__(self):
         """
@@ -44,7 +44,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         return super(ElfinderVolumeLocalFileSystem, self).mount(opts)
     
-    def configure(self):
+    def _configure(self):
         """
         Configure after successful mount.
         """
@@ -52,14 +52,14 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         if self._options['quarantine']:
             self._attributes.append({
-                'pattern' : r'^%s$' % re.escape('%s%s' % (self._separator, self._options['quarantine'])),
+                'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._options['quarantine'])),
                 'read' : False,
                 'write' : False,
                 'locked' : True,
                 'hidden': True
             })
 
-        super(ElfinderVolumeLocalFileSystem, self).configure()
+        super(ElfinderVolumeLocalFileSystem, self)._configure()
 
         #if no thumbnails url - try to detect it
         if not self._options['tmbURL'] and self._options['URL']:

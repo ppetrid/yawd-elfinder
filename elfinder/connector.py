@@ -73,7 +73,7 @@ class ElfinderConnector:
             except Exception as e:
                 #raise the exception in debug mode
                 if settings.DEBUG:
-                    raise e
+                    raise
 
                 self._mountErrors.append('Driver "%s" " %s' % (class_, e))
                 break
@@ -161,7 +161,7 @@ class ElfinderConnector:
         #set mimes filter and pop mimes from the arguments list
         if 'mimes' in kwargs:
             for id_ in self._volumes:
-                self._volumes[id_].setMimesFilter(kwargs['mimes'])
+                self._volumes[id_].set_mimes_filter(kwargs['mimes'])
             kwargs.pop('mimes')
 
         debug = self._debug or ('debug' in kwargs and kwargs['debug'])
@@ -181,14 +181,6 @@ class ElfinderConnector:
         
         #call handlers for this command
         #TODO: a signal must be sent here
-
-        #remove hidden files and filter files by mimetypes
-        if 'added' in result:
-            result['added'] = self._filter(result['added'])
-        
-        #remove hidden files and filter files by mimetypes
-        if 'changed' in result:
-            result['changed'] = self._filter(result['changed'])
         
         if debug:
             result['debug'] = {
@@ -218,17 +210,19 @@ class ElfinderConnector:
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
         method must be used.
         """
-        hash_ = 'default folder' if init else '#%s' % target
 
         if not init and not target:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_INV_PARAMS, 'open')}
+
+        #display name for use in error messages
+        display_hash = 'default folder' if init else '#%s' % target
 
         #detect volume
         try:
             volume = self._volume(target)
         except VolumeNotFoundError as e:
             if not init:
-                return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, hash_, e)}
+                return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, e)}
             else:
                 #on init request we can get invalid dir hash -
                 #dir which can not be opened now, but remembered by client,
@@ -239,17 +233,19 @@ class ElfinderConnector:
             cwd = volume.dir(hash_=target, resolveLink=True)
             if not cwd['read'] and init:
                 try:
-                    cwd = volume.dir(hash_=volume.defaultPath(), resolveLink=True)
+                    cwd = volume.dir(hash_=volume.default_path(), resolveLink=True)
                 except (DirNotFoundError, FileNotFoundError) as e:
-                    return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, hash_, e)}
+                    return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, e)}
         except (DirNotFoundError, FileNotFoundError) as e:
             if init:
-                cwd = volume.dir(hash_=volume.defaultPath(), resolveLink=True)
+                cwd = volume.dir(hash_=volume.default_path(), resolveLink=True)
             else:
-                return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, hash_, e)}
+                if settings.DEBUG:
+                    raise
+                return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, e)}
 
         if not cwd['read']:
-            return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, hash_, ElfinderErrorMessages.ERROR_PERM_DENIED)}
+            return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, ElfinderErrorMessages.ERROR_PERM_DENIED)}
 
         files = []
         #get folder trees
@@ -269,14 +265,14 @@ class ElfinderConnector:
 
         result = {
             'cwd' : cwd,
-            'options' : volume.options(target),
+            'options' : volume.options(cwd['hash']),
             'files' : files
         }
 
         if init:
             result['api'] = self._version
             result['netDrivers'] = self._netDrivers.keys()
-            result['uplMaxSize'] = volume.uploadMaxSize()
+            result['uplMaxSize'] = volume.upload_max_size()
         
         return result
 
@@ -744,15 +740,3 @@ class ElfinderConnector:
                 if hash_.find(id_) == 0:
                     return v
         raise VolumeNotFoundError()
-
-    def _filter(self, files):
-        """
-        Remove hidden files and files with required mime types from the provided file list
-        """
-        #TODO: we need something better here. This is called for 'added' files, possibly for multiple target volumes. 
-        #Hidden and unaccepted files should not be added or changed in the first place.
- 
-        for file_ in files:
-            if ('hidden' in file_ and file_['hidden']) or not self._default.mimeAccepted(file_['mime']):
-                files.remove(file_)
-        return files
