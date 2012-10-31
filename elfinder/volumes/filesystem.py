@@ -160,7 +160,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         for entry in os.listdir(path):
             p = self._joinPath(path, entry)
-            if os.path.isdir(p) and not self.attr(path=p, name='hidden'):
+            if os.path.isdir(p) and not self.attr(p, 'hidden'):
                 return True
     
     def _dimensions(self, path, mime):

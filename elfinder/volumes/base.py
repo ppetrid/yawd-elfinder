@@ -173,7 +173,8 @@ class ElfinderVolumeDriver(object):
                 
     def _cachekeys(self):
         """
-        Get volume cachekeys as a tuple
+        Get volume cache key prefixes as a 2-item tuple. Directory keys
+        come first, followed by the file keys.
         """
         return ('%selfinder_dirs_cache' % self.id(),
         '%selfinder_stats_cache' % self.id())
@@ -217,6 +218,7 @@ class ElfinderVolumeDriver(object):
         """
         
         self._options.update(opts)
+
         if self._options['id']:
             self._id = '%s%s_' % (self._driverId, self._options['id'])
         else:
@@ -241,11 +243,10 @@ class ElfinderVolumeDriver(object):
         })
 
         #set files attributes
-        if self._options['attributes']:
-            for a in self._options['attributes']:
-                #attributes must contain pattern and at least one rule
-                if 'pattern' in a and len(a) > 1:
-                    self._attributes.append(a)
+        for a in self._options['attributes']:
+            #attributes must contain pattern and at least one rule
+            if 'pattern' in a and len(a) > 1:
+                self._attributes.append(a)
         
         self._access = self._options['accessControl']
         self._today = time.mktime(datetime.date.today().timetuple())
@@ -478,14 +479,17 @@ class ElfinderVolumeDriver(object):
         Return subfolders for required folder or False on error
         """
         path = self.decode(hash_) if hash_ else self._root
-        
-        dir_ = self.stat(path)
-        if dir_['mime'] != 'directory':
+
+        dirs = [self.stat(path)]
+        if dirs[0]['mime'] != 'directory':
             return []
         
-        dirs = self.gettree(path, (deep - 1) if deep > 0 else (self._options['treeDeep'] - 1), self.decode(exclude) if exclude else None)
-        dirs[:0] = [dir_]
-        return dirs
+        try:
+            excluded = self.decode(exclude)
+        except FileNotFoundError:
+            excluded = None
+                
+        return dirs + self.gettree(path, (deep - 1) if deep > 0 else (self._options['treeDeep'] - 1), excluded)
     
     def parents(self, hash_):
         """
@@ -594,7 +598,7 @@ class ElfinderVolumeDriver(object):
             raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % dst)
         
         path = self.decode(dst)
-        if not dir_['write'] or not self.allowCreate(path, name):
+        if not dir_['write'] or not self.attr(self._joinPath(path, name), 'write'):
             raise PermissionDeniedError
         
         try:
@@ -633,7 +637,7 @@ class ElfinderVolumeDriver(object):
         except os.error:
             pass
         
-        if not self.allowCreate(dir_, name):
+        if not self.attr(self._joinPath(dir_, name), 'write'):
             return PermissionDeniedError
 
         self.rmTmb(file_) #remove old name tmbs, we cannot do this after dir move
@@ -658,7 +662,7 @@ class ElfinderVolumeDriver(object):
         dir_  = self._dirname(path)
         name = self.uniqueName(dir_, self._basename(path), ' %s ' % suffix)
 
-        if not self.allowCreate(dir_, name):
+        if not self.attr(self._joinPath(dir_, name), 'write'):
             raise PermissionDeniedError
 
         return self.stat(self.copy(path, dir_, name))
@@ -1008,8 +1012,9 @@ class ElfinderVolumeDriver(object):
 
             path = self.uncrypt(h) 
             #append ROOT to path after it was cut in encode
-            return self._abspath(path) 
-        return ''
+            return self._abspath(path)
+
+        raise FileNotFoundError
     
     def crypt(self, path):
         """
@@ -1065,55 +1070,25 @@ class ElfinderVolumeDriver(object):
     
     #*********************** file stat *********************#
     
-    def attr(self, path, name, val=None):
+    def attr(self, path, attr, val=False):
         """
         Check file attribute
         """
         
-        if not name in self._defaults:
+        if not attr in self._defaults:
             return False
 
-        perm = None
-
         #TODO: replace this with signals??
-        if self._access:
-            if hasattr(self._access, '__call__'):
-                perm = self._access(name, path, self)
-
+        if self._access and hasattr(self._access, '__call__'):
+            perm = self._access(attr, path, self)
             if perm != None:
                 return perm
 
-        path = self._relpath(path).replace(self._separator, '/')
-        path = u'/%s' % path
-            
         for attrs in self._attributes:
-            if name in attrs and 'pattern' in attrs and re.search(attrs['pattern'], path):
-                perm = attrs[name]
+            if attr in attrs and re.search(attrs['pattern'], '%s%s' % (self._separator, self._relpath(path))):
+                return attrs[attr]
                 
-        return (self._defaults[name] if not val else val) if not perm else perm
-
-    def allowCreate(self, dir_, name):
-        """
-        Return ``True`` if file with given ``name`` can be created in the ``dir_`` folder.
-        """
-        path = self._joinPath(dir_, name)
-        perm = None
-        
-        if self._access:
-            if hasattr(self._access, '__call__'):
-                perm = self._access(name, path, self)
-            
-            if perm != None:
-                return perm
-        
-        testPath = self._separator+self._relpath(path)
-        
-        for i in range(0, len(self._attributes)):
-            attrs = self._attributes[i]
-            if 'write' in attrs and 'pattern' in attrs and re.search(attrs['pattern'], testPath):
-                perm = attrs['write']
-
-        return True if perm is None else perm
+        return self._defaults[attr] if not val else val
 
     def stat(self, path):
         """
@@ -1152,19 +1127,19 @@ class ElfinderVolumeDriver(object):
         if not 'size' in stat or (not stat['size'] and stat['mime'] == 'directory'):
             stat['size'] = 'unknown'
 
-        stat['read'] = int(self.attr(path=path, name='read', val=stat['read'] if 'read' in stat else None))
-        stat['write'] = int(self.attr(path=path, name='write', val=stat['write'] if 'write' in stat else None))
+        stat['read'] = int(self.attr(path, 'read', stat['read']))
+        stat['write'] = int(self.attr(path, 'write', stat['write']))
 
         if root:
             stat['locked'] = 1
-        elif self.attr(path=path, name='locked', val=self.isLocked(stat)):
+        elif self.attr(path, 'locked', self.isLocked(stat)):
             stat['locked'] = 1
         elif 'locked' in stat:
             del stat['locked']
 
         if root and 'hidden' in stat:
             del stat['hidden']
-        elif self.attr(path=path, name='hidden', val=self.isHidden(stat)) or not self.mimeAccepted(stat['mime']):
+        elif self.attr(path, 'hidden', self.isHidden(stat)) or not self.mimeAccepted(stat['mime']):
             stat['hidden'] = 0 if root else 1
         elif 'hidden' in stat:
             del stat['hidden']
@@ -1197,7 +1172,7 @@ class ElfinderVolumeDriver(object):
 
     def cacheDir(self, path):
         """
-        Get stat for folder content and put in cache
+        Get stat for folder content and put in the cache.
         """
         dirsCache = cache.get(self._cachekeys()[0], {})
         dirsCache[path] = []
