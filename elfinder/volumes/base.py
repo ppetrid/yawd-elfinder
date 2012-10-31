@@ -156,6 +156,13 @@ class ElfinderVolumeDriver(object):
         #set thumbnails path
         if self._options['tmbPath']:
             path = self._joinPath(self._root, self._options['tmbPath'])
+            
+            self._attributes.append({
+                'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._relpath(path))),
+                'locked' : True,
+                'hidden' : True
+            })
+            
             try:
                 stat = self.stat(path)
             except os.error:
@@ -167,7 +174,7 @@ class ElfinderVolumeDriver(object):
 
             if stat and stat['mime'] == 'directory' and stat['read']:
                 self._options['tmbPath'] = path
-                self._tmbPathWritable = stat['write']
+                self._tmbPathWritable = stat['write']          
             else:
                 self._options['tmbPath'] = ''
                 
@@ -236,8 +243,8 @@ class ElfinderVolumeDriver(object):
         }
 
         #root attributes
-        self._attributes.append( {
-            'pattern' : r'^%s$' % re.escape(self._separator),
+        self._attributes.insert(0, {
+            'pattern' : '^%s$' % re.escape(self._separator),
             'locked' : True,
             'hidden' : False
         })
@@ -318,6 +325,7 @@ class ElfinderVolumeDriver(object):
         """
         Some "unmount" stuff - may be required by virtual fs
         """
+        #TODO: maybe delete cache here
         pass
     
     def setMimesFilter(self, mimes):
@@ -1109,11 +1117,10 @@ class ElfinderVolumeDriver(object):
             return
 
         stat['hash'] = self.encode(path)
-        root = (path == self._root)
-        if root:
+
+        if path == self._root:
             stat['volumeid'] = self.id()
-            if self._rootName:
-                stat['name'] = self._rootName
+            stat['name'] = self._rootName
         else:
             if not 'name' in stat or not stat['name']:
                 stat['name'] = self._basename(path)
@@ -1129,20 +1136,8 @@ class ElfinderVolumeDriver(object):
 
         stat['read'] = int(self.attr(path, 'read', stat['read']))
         stat['write'] = int(self.attr(path, 'write', stat['write']))
-
-        if root:
-            stat['locked'] = 1
-        elif self.attr(path, 'locked', self.isLocked(stat)):
-            stat['locked'] = 1
-        elif 'locked' in stat:
-            del stat['locked']
-
-        if root and 'hidden' in stat:
-            del stat['hidden']
-        elif self.attr(path, 'hidden', self.isHidden(stat)) or not self.mimeAccepted(stat['mime']):
-            stat['hidden'] = 0 if root else 1
-        elif 'hidden' in stat:
-            del stat['hidden']
+        stat['locked'] = int(self.attr(path, 'locked', self.isLocked(stat))) 
+        stat['hidden'] = int(self.attr(path, 'hidden', self.isHidden(stat)) and self.mimeAccepted(stat['mime'])) 
 
         if stat['read'] and not self.isHidden(stat):
             if stat['mime'] == 'directory':
