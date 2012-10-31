@@ -1,4 +1,5 @@
 import os, re, time, urllib
+from django.conf import settings
 from django.utils.translation import ugettext as _
 from exceptions import ElfinderErrorMessages, VolumeNotFoundError, DirNotFoundError, FileNotFoundError, NamedError, NotAnImageError
 
@@ -70,6 +71,10 @@ class ElfinderConnector:
             try:
                 volume.mount(o)
             except Exception as e:
+                #raise the exception in debug mode
+                if settings.DEBUG:
+                    raise e
+
                 self._mountErrors.append('Driver "%s" " %s' % (class_, e))
                 break
             
