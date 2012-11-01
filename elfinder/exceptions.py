@@ -80,7 +80,7 @@ class NamedError(Exception):
     """
     def __init__(self, msg, name):
         self.name = name
-        super(DirNotFoundError, self).__init__(msg)
+        super(NamedError, self).__init__(msg)
         
 class NotAnImageError(Exception):
     def __init__(self):
