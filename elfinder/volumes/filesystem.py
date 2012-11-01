@@ -265,11 +265,12 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     def _move(self, source, target_dir, name):
         """
         Move file into another parent dir.
-        Return new file path or False.
+        Return new file path or raise os.error.
         """
         target = self._joinPath(target_dir, name)
-        return target if os.rename(source, target) else False
-
+        os.rename(source, target)
+        return target
+        
     def _unlink(self, path):
         """
         Remove file

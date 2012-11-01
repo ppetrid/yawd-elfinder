@@ -294,12 +294,6 @@ class ElfinderVolumeDriver(object):
         #TODO: maybe delete cache here
         pass
     
-    def set_mimes_filter(self, mimes):
-        """
-        Set mimetypes allowed to display in client
-        """
-        self._options['onlyMimes'] = mimes
-    
     def default_path(self):
         """
         Return root or startPath hash
@@ -335,7 +329,13 @@ class ElfinderVolumeDriver(object):
         """
         return cmd in self._options['disabled']
     
-    def mimeAccepted(self, mime, mimes = [], empty = True):
+    def set_mimes_filter(self, mimes):
+        """
+        Set mimetypes allowed to display in client
+        """
+        self._options['onlyMimes'] = mimes
+
+    def mime_accepted(self, mime, mimes = [], empty = True):
         """
         Return True if mime is in required mimes list
         """
@@ -345,13 +345,13 @@ class ElfinderVolumeDriver(object):
 
         return mime == 'directory' or 'all' in mimes or 'All' in mimes or mime in mimes or mime[0:mime.find('/')] in mimes
     
-    def isReadable(self):
+    def is_readable(self):
         """
-        Return True if volume is readable.
+        Return True if root is readable.
         """
         return self.stat(self._root)['read']
     
-    def copyFromAllowed(self):
+    def copy_from_allowed(self):
         """
         Return True if copy from this volume allowed
         """
@@ -437,7 +437,7 @@ class ElfinderVolumeDriver(object):
         path = self.decode(hash_)
        
         for stat in self.getScandir(path):
-            if not self.isHiddden(stat) and self.mimeAccepted(stat['mime']):
+            if not self.isHiddden(stat) and self.mime_accepted(stat['mime']):
                 list_.append(stat['name'])
 
         return list_
@@ -487,15 +487,54 @@ class ElfinderVolumeDriver(object):
         Create thumbnail for required file and return its name or None on fail.
         Will raise exception upon fail.
         """
+    
         path = self.decode(hash_)
+        stat = self.file(hash_)
+        name = self._tmb_name(stat)
+        
+        if stat['tmb'] != 1:
+            return stat['tmb']
+        
+        if not self.canCreateTmb(path, stat):
+            raise PermissionDeniedError()
 
+        #copy the image to the thumbnail
+        tmb  = self._joinPath(self._options['tmbPath'], name)
+        tmb_size = self._options['tmbSize']
+        
         try:
-            stat = self.stat(path)
-        except os.error:
-            raise FileNotFoundError
+            im = self._openimage(path)
+            s = im.size
+        except:
+            raise NotAnImageError
+    
+        # If image smaller or equal thumbnail size - just fitting to thumbnail square 
+        if s[0] <= tmb_size and s[1]  <= tmb_size:
+            self._img_square_fit(path, tmb, tmb_size, tmb_size, self._options['tmbBgColor'], 'png')
+        elif self._options['tmbCrop']:
+            #Resize and crop if image bigger than thumbnail
+            if s[0] > tmb_size and s[1] > tmb_size:
+                s = self._img_resize(path, tmb, tmb_size, tmb_size, True, False, 'png')
+                try:
+                    self._img_crop(tmb, tmb, tmb_size, tmb_size, int((s[0] - tmb_size)/2), int((s[1] - tmb_size)/2), 'png')
+                except:
+                    self._unlink(tmb)
+                    raise
+            else:
+                self._img_crop(path, tmb, tmb_size, tmb_size, 
+                    int((s[0] - tmb_size)/2) if s[0] > tmb_size else 0,
+                    int((s[1] - tmb_size)/2) if s[1] > tmb_size else 0, 'png')
+        else:
+            try:
+                im.thumbnail((tmb_size, tmb_size), Image.ANTIALIAS)
+                self._saveimage(im, tmb, 'png')
+                self._img_square_fit(tmb, tmb, tmb_size, tmb_size, self._options['tmbBgColor'], 'png' )
+            except:
+                self._unlink(tmb)
+                raise
 
-        if 'tmb' in stat:
-            return self.createTmb(path, stat) if stat['tmb'] == 1 else stat['tmb']
+        #TODO: shouldn't we clear the cache for this file?
+        return name
     
     def size(self, hash_):
         """
@@ -583,37 +622,39 @@ class ElfinderVolumeDriver(object):
         Rename file and return file info
         """
 
-        if self.command_disabled('rename'):
+        path = self.decode(hash_)
+        dir_  = self._dirname(path)
+
+        if self.command_disabled('rename') or not self.attr(self._joinPath(dir_, name), 'write'):
             raise PermissionDeniedError
         
         if not self.nameAccepted(name):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
-        
+
         file_ = self.file(hash_)
-        
-        if name == file_['name']:
-            return file_
+        file_['realpath'] = path
+
+        if name == self._basename(path):
+            return (file_, file_)
         
         if self.isLocked(file_):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, file_['name'])
-        
-        path = self.decode(hash_)
-        dir_  = self._dirname(path)
+          
         try:
             self.stat(self._joinPath(dir_, name))
             raise NamedError(ElfinderErrorMessages.ERROR_EXISTS, name)
         except os.error:
             pass
-        
-        if not self.attr(self._joinPath(dir_, name), 'write'):
-            return PermissionDeniedError
 
         self.rmTmb(file_) #remove old name tmbs, we cannot do this after dir move
-        self._move(path, dir_, name)
-        path = self._joinPath(dir_, name)
+        path = self._move(path, dir_, name)
+        
+        if not path:
+            raise Exception('Unable to rename the file')
+        
         self.clearcache()
 
-        return self.stat(path)
+        return (self.stat(path), file_) 
 
     def duplicate(self, hash_, suffix='copy'):
         """
@@ -658,8 +699,8 @@ class ElfinderVolumeDriver(object):
         mime = uploaded_file.content_type 
 
         #logic based on http://httpd.apache.org/docs/2.2/mod/mod_authz_host.html#order
-        allow = self.mimeAccepted(mime, self._options['uploadAllow'], None)
-        deny   = self.mimeAccepted(mime, self._options['uploadDeny'], None)
+        allow = self.mime_accepted(mime, self._options['uploadAllow'], None)
+        deny   = self.mime_accepted(mime, self._options['uploadDeny'], None)
         if self._options['uploadOrder'][0].lower() == 'allow': #['allow', 'deny'], default is to 'deny'
             upload = False #default is deny
             if not deny and allow == True: #match only allow
@@ -773,7 +814,7 @@ class ElfinderVolumeDriver(object):
             return self.stat(path)
         
         #copy/move from another volume
-        if not self._options['copyTo'] or not volume.copyFromAllowed():
+        if not self._options['copyTo'] or not volume.copy_from_allowed():
             raise PermissionDeniedError()
         
         path = self.copyFrom(volume, src, destination, name)
@@ -898,15 +939,15 @@ class ElfinderVolumeDriver(object):
             raise Exception(ElfinderErrorMessages.ERROR_UNSUPPORT_TYPE)
 
         if mode == 'propresize':
-            result = self.imgResize(path, width, height, True, True)
+            result = self._img_resize(path, path, width, height, True, True)
         elif mode == 'crop':
-            result = self.imgCrop(path, width, height, x, y)
+            result = self._img_crop(path, path, width, height, x, y)
         elif mode == 'fitsquare':
-            result = self.imgSquareFit(path, width, height, bg if bg else self._options['tmbBgColor'])
+            result = self._img_square_fit(path, path, width, height, bg if bg else self._options['tmbBgColor'])
         elif mode == 'rotate':
-            result = self.imgRotate(path, degree, bg if bg else self._options['tmbBgColor'])
+            result = self._img_rotate(path, path, degree, bg if bg else self._options['tmbBgColor'])
         else:
-            result = self.imgResize(path, width, height, False, True)
+            result = self._img_resize(path, path, width, height, False, True)
 
         if result:
             self.rmTmb(file_)
@@ -1098,11 +1139,11 @@ class ElfinderVolumeDriver(object):
         stat['read'] = int(self.attr(path, 'read', stat['read']))
         stat['write'] = int(self.attr(path, 'write', stat['write']))
         stat['locked'] = int(self.attr(path, 'locked', self.isLocked(stat))) 
-        stat['hidden'] = int(self.attr(path, 'hidden', self.isHidden(stat)) and self.mimeAccepted(stat['mime'])) 
+        stat['hidden'] = int(self.attr(path, 'hidden', self.isHidden(stat)) and self.mime_accepted(stat['mime'])) 
 
         if stat['read'] and not self.isHidden(stat):
-            if stat['mime'] == 'directory':
-                #for dir - check for subdirs
+
+            if stat['mime'] == 'directory': #handle directories
                 if self._options['checkSubfolders']:
                     if 'dirs' in stat:
                         if not stat['dirs']:
@@ -1113,12 +1154,8 @@ class ElfinderVolumeDriver(object):
                         stat['dirs'] = 1
                 else:
                     stat['dirs'] = 1
-            else:
-                #for files - check for thumbnails
-                p = stat['target'] if 'target' in stat else path
-                if self._options['tmbURL'] and not 'tmb' in stat and self.canCreateTmb(p, stat):
-                    tmb = self.gettmb(p, stat)
-                    stat['tmb'] = tmb if tmb else 1
+            else: #file
+                stat['tmb'] = self._get_tmb(stat['target'] if 'target' in stat else path, stat)
         
         if 'alias' in stat and stat['alias'] and 'target' in stat and stat['target']:
             stat['thash'] = self.encode(stat['target'])
@@ -1280,7 +1317,7 @@ class ElfinderVolumeDriver(object):
             except os.error: #invalid links
                 continue
 
-            if self.isHidden(stat) or not self.mimeAccepted(stat['mime']):
+            if self.isHidden(stat) or not self.mime_accepted(stat['mime']):
                 continue
             
             name = stat['name']
@@ -1457,13 +1494,13 @@ class ElfinderVolumeDriver(object):
     
     #************************* thumbnails **************************#
 
-    def tmbname(self, stat):
+    def _tmb_name(self, stat):
         """
         Return thumbnail file name for required file
         """
-        return u'%s%s.png' % (stat['hash'], stat['ts'])
+        return '%s%s.png' % (stat['hash'], stat['ts'])
 
-    def gettmb(self, path, stat):
+    def _get_tmb(self, path, stat):
         """
         Return thumnbnail name if exists
         """
@@ -1472,12 +1509,14 @@ class ElfinderVolumeDriver(object):
             if path.startswith(self._options['tmbPath']):
                 return self._basename(path)
 
-            name = self.tmbname(stat)
+            name = self._tmb_name(stat)
             try:
                 self.stat(self._joinPath(self._options['tmbPath'], name))
                 return name
             except os.error:
-                return None
+                pass
+        #default thumbnail value
+        return 1
 
     def canCreateTmb(self, path, stat):
         """
@@ -1492,65 +1531,7 @@ class ElfinderVolumeDriver(object):
         """
         return self.canCreateTmb(path, stat)
 
-    def createTmb(self, path, stat):
-        """
-        Create thumnbnail and return it's URL on success.
-        Raises PermissionDeniedError, os.error, NotAnImageError
-        """
-
-        if not self.canCreateTmb(path, stat):
-            raise PermissionDeniedError()
-
-        name = self.tmbname(stat)
-        self._copy(path, self._options['tmbPath'], name)
-        tmb  = self._joinPath(self._options['tmbPath'], name)
-
-        tmbSize = self._options['tmbSize']        
-        try:
-            im = self._openimage(tmb)
-            s = im.size
-        except:
-            self._unlink(tmb)
-            raise NotAnImageError
-    
-        # If image smaller or equal thumbnail size - just fitting to thumbnail square 
-        if s[0] <= tmbSize and s[1]  <= tmbSize:
-            try:
-                self.imgSquareFit(tmb, tmbSize, tmbSize, self._options['tmbBgColor'], 'png')
-            except:
-                self._unlink(tmb)
-                raise
-        elif self._options['tmbCrop']:
-
-            #Resize and crop if image bigger than thumbnail
-            if not ((s[0] > tmbSize and s[1] <= tmbSize) or (s[0] <= tmbSize and s[1] > tmbSize)) or (s[0] > tmbSize and s[1] > tmbSize):
-                try:
-                    s = self.imgResize(tmb, tmbSize, tmbSize, True, False, 'png')
-                except:
-                    self._unlink(tmb)
-                    raise
-
-            s = im.size
-            x = int((s[0] - tmbSize)/2) if s[0] > tmbSize else 0
-            y = int((s[1] - tmbSize)/2) if s[1] > tmbSize else 0
-            
-            try:
-                self.imgCrop(tmb, tmbSize, tmbSize, x, y, 'png')
-            except:
-                self.unlink(tmb)
-                raise
-        else:
-            try:
-                im.thumbnail((tmbSize, tmbSize), Image.ANTIALIAS)
-                self._saveimage(im, tmb, 'png')
-                self.imgSquareFit(tmb, tmbSize, tmbSize, self._options['tmbBgColor'], 'png' )
-            except:
-                self._unlink(tmb)
-                raise
-
-        return name
-
-    def imgResize(self, path, width, height, keepProportions = False, resizeByBiggerSide = True, destformat = None):
+    def _img_resize(self, path, target, width, height, keepProportions = False, resizeByBiggerSide = True, destformat = None):
         """
         Resize image and return the new size.
         """
@@ -1582,13 +1563,13 @@ class ElfinderVolumeDriver(object):
                 size_w = width
 
         resized = im.resize((size_w, size_h), Image.ANTIALIAS)
-        self._saveimage(resized, path, destformat if destformat else im.format)
+        self._saveimage(resized, target, destformat if destformat else im.format)
         
         return resized.size
 
-    def imgCrop(self, path, width, height, x, y, destformat = None):
+    def _img_crop(self, path, target, width, height, x, y, destformat = None):
         """
-        Crop image
+        Crop image.
         """
         try:
             im = self._openimage(path)
@@ -1596,11 +1577,11 @@ class ElfinderVolumeDriver(object):
             raise NotAnImageError
 
         cropped = im.crop((x, y, width+x, height+y))
-        self._saveimage(cropped, path, destformat if destformat else im.format)
+        self._saveimage(cropped, target, destformat if destformat else im.format)
 
         return path
 
-    def imgSquareFit(self, path, width, height, bgcolor = '#0000ff', destformat = None):
+    def _img_square_fit(self, path, target, width, height, bgcolor = '#0000ff', destformat = None):
         """
         Put image to square
         """
@@ -1616,11 +1597,11 @@ class ElfinderVolumeDriver(object):
         else: #do not use a mask if file is not in RGBA mode.
             bg.paste(im, ((width-im.size[0])/2, (height-im.size[1])/2))
 
-        self._saveimage(bg, path, destformat if destformat else im.format)
+        self._saveimage(bg, target, destformat if destformat else im.format)
 
         return path
 
-    def imgRotate(self, path, degree, bgcolor = '#ffffff', destformat = None):
+    def img_rotate(self, path, target, degree, bgcolor = '#ffffff', destformat = None):
         """
         Rotate image
         """
@@ -1634,7 +1615,7 @@ class ElfinderVolumeDriver(object):
         bg = Image.new('RGB', rotated.size, bgcolor)
         
         result = Image.composite(rotated, bg, rotated)
-        self._saveimage(result, path, destformat if destformat else im.format)
+        self._saveimage(result, target, destformat if destformat else im.format)
         
         return path
 
@@ -1645,7 +1626,7 @@ class ElfinderVolumeDriver(object):
         if stat['mime'] == 'directory':
             for p in self._scandir(self.decode(stat['hash'])):
                 self.rmTmb(self.stat(p))
-        elif 'tmb' in stat and stat['tmb'] and stat['tmb'] != '1':
+        elif stat['tmb'] != 1:
             tmb = self._joinPath(self._options['tmbPath'], stat['tmb'])
             try:
                 self._unlink(tmb)
@@ -1889,7 +1870,7 @@ class ElfinderVolumeDriver(object):
     def _move(self, source, target_dir, name):
         """
         Move file into another parent dir.
-        Return new file path or false.
+        Return new file path or raise os.error.
         """
         raise NotImplementedError
     

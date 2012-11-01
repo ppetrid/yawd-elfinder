@@ -80,7 +80,7 @@ class ElfinderConnector:
             
             id_ = volume.id()
             self._volumes[id_] = volume
-            if not self._default and volume.isReadable():
+            if not self._default and volume.is_readable():
                 self._default = self._volumes[id_]
 
         self._loaded = (self._default is not None)
@@ -429,7 +429,7 @@ class ElfinderConnector:
         try:
             return { 'added' : [volume.mkdir(target, name)] }
         except NamedError as e:
-            return { 'error' : self.error(ElfinderErrorMessages.ERROR_MKDIR, name, e, e.name) }
+            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_MKDIR) }
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKDIR, name, e) }
 
@@ -447,7 +447,7 @@ class ElfinderConnector:
         try:
             return { 'added' : [volume.mkfile(target, name)] }
         except NamedError as e:
-            return { 'error' : self.error(ElfinderErrorMessages.ERROR_MKFILE, name, e, e.name) }
+            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_MKFILE, name ) }
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKFILE, name, e) }
 
@@ -459,17 +459,20 @@ class ElfinderConnector:
         """
         try:
             volume = self._volume(target)
-            rm = volume.file(target)
-        except (VolumeNotFoundError, FileNotFoundError):
+        except (VolumeNotFoundError):
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
 
-        rm['realpath'] = volume.realpath(target)
         try:
-            return { 'added' : [volume.rename(target, name)], 'removed' : [rm] }
+            renamed_tuple = volume.rename(target, name)
+            return { 'added' : [renamed_tuple[0]], 'removed' : [renamed_tuple[1]] }
         except NamedError as e:
-            return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, rm['name'], e, e.name) }
-        except Exception as e: 
-            return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, rm['name'], e) }
+            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_RENAME) }
+        except FileNotFoundError:
+            return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
+        except Exception as e:
+            if settings.DEBUG:
+                raise
+            return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, e) }
 
     def _duplicate(self, targets, suffix='copy'):
         """
@@ -515,7 +518,7 @@ class ElfinderConnector:
             try:
                 volume.rm(target)
             except NamedError as e:
-                result['warning'] = self.error(e, e.name)
+                result['warning'] = self.error(e.name, e)
             except Exception as e:
                 result['warning'] = self.error(e)
 
@@ -579,7 +582,7 @@ class ElfinderConnector:
             try:
                 result['added'].append(dstVolume.paste(srcVolume, target, dst, cut))
             except NamedError as e:
-                result['warning'] = self.error(e, e.name)
+                result['warning'] = self.error(e.name, e)
             except Exception as e:
                 result['warning'] = self.error(e)
 
