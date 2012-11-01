@@ -40,11 +40,9 @@ class ElfinderConnector:
     }
 
     def __init__(self, opts, session = None):
-        
-        try: #initialize opts if they are incorrect
-            opts['roots']
-        except (TypeError, KeyError):
-            opts = {'roots' : []}
+
+        if not 'roots' in opts:
+            opts['roots'] = []
 
         self._volumes = {}
         self._default = None
@@ -67,6 +65,7 @@ class ElfinderConnector:
                 volume = class_()
             except TypeError:
                 self._mountErrors.append('Driver "%s" does not exist' % class_)
+                continue
 
             try:
                 volume.mount(o)
@@ -422,7 +421,7 @@ class ElfinderConnector:
         try:
             return { 'added' : [volume.mkdir(target, name)] }
         except NamedError as e:
-            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_MKDIR) }
+            return { 'error' : self.error(e, e.name, ElfinderErrorMessages.ERROR_MKDIR) }
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKDIR, name, e) }
 
@@ -440,7 +439,7 @@ class ElfinderConnector:
         try:
             return { 'added' : [volume.mkfile(target, name)] }
         except NamedError as e:
-            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_MKFILE, name ) }
+            return { 'error' : self.error(e, e.name, ElfinderErrorMessages.ERROR_MKFILE, name ) }
         except Exception as e:
             return { 'error': self.error(ElfinderErrorMessages.ERROR_MKFILE, name, e) }
 
@@ -458,7 +457,7 @@ class ElfinderConnector:
         try:
             return { 'added' : volume.rename(target, name), 'removed' : volume.removed() }
         except NamedError as e:
-            return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_RENAME) }
+            return { 'error' : self.error(e, e.name, ElfinderErrorMessages.ERROR_RENAME) }
         except FileNotFoundError:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
         except Exception as e:
@@ -510,7 +509,7 @@ class ElfinderConnector:
             try:
                 volume.rm(target)
             except NamedError as e:
-                result['warning'] = self.error(e.name, e)
+                result['warning'] = self.error(e, e.name)
             except Exception as e:
                 result['warning'] = self.error(e)
 
@@ -574,7 +573,7 @@ class ElfinderConnector:
             try:
                 result['added'].append(dstVolume.paste(srcVolume, target, dst, cut))
             except NamedError as e:
-                result['warning'] = self.error(e.name, e)
+                result['warning'] = self.error(e, e.name)
             except Exception as e:
                 result['warning'] = self.error(e)
 

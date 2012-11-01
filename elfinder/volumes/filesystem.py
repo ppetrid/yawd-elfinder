@@ -117,13 +117,9 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Get an available name for this file name.
         """
 
-        max_ = i+10000
-        while i <= max_:
+        while i <= 10000:
             n = '%s%s%s' % (name, (i if i > 0 else ''), ext)
-            try:
-                self.stat(self._join_path(dir_, n))
-            except os.error:
-                self.clearcache()
+            if not os.path.exists(self._join_path(dir_, n)):
                 return n
             i+=1
 
@@ -178,7 +174,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         for entry in os.listdir(path):
             p = self._join_path(path, entry)
-            if os.path.isdir(p) and not self.attr(p, 'hidden'):
+            if os.path.isdir(p) and not self._attr(p, 'hidden'):
                 return True
     
     def _dimensions(self, path, mime):
