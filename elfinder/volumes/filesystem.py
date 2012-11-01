@@ -1,4 +1,5 @@
 import os, re, time, shutil, magic
+from hashlib import md5
 from PIL import Image
 from django.conf import settings
 from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError
@@ -68,7 +69,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         #check quarantine dir
         if self._options['quarantine']:
-            self._quarantine = self._joinPath(self._root, self._options['quarantine'])
+            self._quarantine = self._join_path(self._root, self._options['quarantine'])
             isdir = os.path.isdir(self._quarantine)
 
         if not self._options['quarantine'] or (isdir and not os.access(self._quarantine, os.W_OK)):
@@ -97,7 +98,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         return os.path.basename(path)
 
-    def _joinPath(self, path1, path2):
+    def _join_path(self, path1, path2):
         """
         Join two paths and return full path. If the latter path is
         absolute, return it.
@@ -110,6 +111,23 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Return normalized path.
         """
         return os.path.normpath(path)
+    
+    def _get_available_name(self, dir_, name, ext, i):
+        """
+        Get an available name for this file name.
+        """
+
+        max_ = i+10000
+        while i <= max_:
+            n = '%s%s%s' % (name, (i if i > 0 else ''), ext)
+            try:
+                self.stat(self._join_path(dir_, n))
+            except os.error:
+                self.clearcache()
+                return n
+            i+=1
+
+        return name+md5(dir_)+ext
 
     #************************* file/dir info *********************#
 
@@ -159,7 +177,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Return True if path is dir and has at least one childs directory
         """
         for entry in os.listdir(path):
-            p = self._joinPath(path, entry)
+            p = self._join_path(path, entry)
             if os.path.isdir(p) and not self.attr(p, 'hidden'):
                 return True
     
@@ -192,20 +210,20 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         target = os.readlink(path)
         try:
             if target[0] != self._separator:
-                target = self._joinPath(self._dirname(path), target)
+                target = self._join_path(self._dirname(path), target)
         except TypeError:
             return None
         
         atarget = os.path.realpath(target)
         if self._inpath(atarget, self._aroot):
-            return self._normpath(self._joinPath(self._root, atarget[len(self._aroot)+1:]))      
+            return self._normpath(self._join_path(self._root, atarget[len(self._aroot)+1:]))      
 
     def _scandir(self, path):
         """
         Return files list in directory.
         The '.' and '..' special directories are omitted.
         """
-        return map(lambda x: self._joinPath(path, x), os.listdir(path))
+        return map(lambda x: self._join_path(path, x), os.listdir(path))
 
     def _fopen(self, path, mode='rb'):
         """
@@ -244,7 +262,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Create file and return it's path or False on failed
         """
-        path = self._joinPath(path, name)
+        path = self._join_path(path, name)
 
         open(path, 'w').close()
         os.chmod(path, self._options['fileMode'])
@@ -254,20 +272,20 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Create symlink
         """
-        return os.symlink(source, self._joinPath(target_dir, name))
+        return os.symlink(source, self._join_path(target_dir, name))
 
     def _copy(self, source, target_dir, name):
         """
         Copy file into another file
         """
-        return shutil.copy(source, self._joinPath(target_dir, name))
+        return shutil.copy(source, self._join_path(target_dir, name))
 
     def _move(self, source, target_dir, name):
         """
         Move file into another parent dir.
         Return new file path or raise os.error.
         """
-        target = self._joinPath(target_dir, name)
+        target = self._join_path(target_dir, name)
         os.rename(source, target)
         return target
         
@@ -288,7 +306,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         Create new file and write into it from file pointer.
         Return new file path or False on error.
         """
-        path = self._joinPath(dir_, name)
+        path = self._join_path(dir_, name)
         target = open(path, 'wb')
         
         read = fp.read(8192)
@@ -305,7 +323,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Save the django UploadedFile object and return its new path
         """
-        path = self._joinPath(dir_, name)
+        path = self._join_path(dir_, name)
         target = self._fopen(path, 'wb+')        
         for chunk in uploaded_file.chunks():
             target.write(chunk)
@@ -314,13 +332,13 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         
         return path
     
-    def _getContents(self, path):
+    def _get_contents(self, path):
         """
         Get file contents
         """
         return open(path).read()
 
-    def _filePutContents(self, path, content):
+    def _put_contents(self, path, content):
         """
         Write a string to a file.
         """
@@ -387,7 +405,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         
         if os.path.isdir(path):
             for p in self._scandir(path):
-                if os.path.islink(p) or not self.nameAccepted(self._basename(p)):
+                if os.path.islink(p) or not self._name_accepted(self._basename(p)):
                     return True
                 elif os.path.isdir(p) and self._findSymlinks(p):
                     return True
@@ -410,8 +428,8 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         if self._quarantine:
             dir_name = u'%s%s' % (str(time.time()).replace(' ', '_'), basename)
-            dir_ = self._joinPath(self._quarantine, dir_name)
-            archive = self._joinPath(dir_, basename)
+            dir_ = self._join_path(self._quarantine, dir_name)
+            archive = self._join_path(dir_, basename)
             
             self._mkdir(dir_)
             os.chmod(dir_, 0777)
@@ -457,12 +475,12 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
                 if m and m.group(0):
                     name = name[0:(len(name)-len(m.group(0)))]
 
-                test = self._joinPath(dirname, name)
+                test = self._join_path(dirname, name)
                 if os.path.exists(test) or os.path.islink(test):
-                    name = self.uniqueName(dirname, name, '-', False)
+                    name = self._unique_name(dirname, name, '-', False)
                 
-                result  = self._joinPath(dirname, name)
-                archive = self._joinPath(result, basename)
+                result  = self._join_path(dirname, name)
+                archive = self._join_path(result, basename)
 
                 self._mkdir(result)
                 self._copy(path, result, basename)

@@ -1,7 +1,6 @@
 import os, datetime, mimetypes, re, inspect, time  
 from PIL import Image
 from base64 import b64encode, b64decode
-from hashlib import md5
 from string import maketrans
 from tarfile import TarFile
 from django.core.cache import cache
@@ -232,9 +231,9 @@ class ElfinderVolumeDriver(object):
             #check startPath - path to open by default instead of root
             if self._options['startPath']:
                 try:
-                    startpath = self._joinPath(self._root, self._options['startPath'])
+                    startpath = self._join_path(self._root, self._options['startPath'])
                     start = self.stat(startpath)
-                    if start['mime'] == 'directory' and start['read'] and not self.isHidden(start):
+                    if start['mime'] == 'directory' and start['read'] and not self._is_hidden(start):
                         self._start_path = self._normpath(startpath)
                 except os.error:
                     #Fail silently if startPath does not exist
@@ -264,7 +263,7 @@ class ElfinderVolumeDriver(object):
         """
         #set thumbnails path
         if self._options['tmbPath']:
-            path = self._joinPath(self._root, self._options['tmbPath'])
+            path = self._join_path(self._root, self._options['tmbPath'])
             
             self._attributes.append({
                 'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._relpath(path))),
@@ -363,21 +362,13 @@ class ElfinderVolumeDriver(object):
         """
         return self._path(self.decode(hash_))
     
-    def realpath(self, hash_):
-        """
-        Return file real path if file exists
-        """
-        path = self.decode(hash_)
-        self.stat(path)
-        return path
-    
     def removed(self):
         """
         Return list of moved/overwrited files
         """
         return self._removed
     
-    def resetRemoved(self):
+    def reset_removed(self):
         """
         Clean removed files list
         """
@@ -410,7 +401,7 @@ class ElfinderVolumeDriver(object):
         if resolveLink and 'thash' in dir_ and dir_['thash']:
             dir_ = self.file(dir_['thash'])
             
-        if dir_['mime'] != 'directory' or self.isHidden(dir_):
+        if dir_['mime'] != 'directory' or self._is_hidden(dir_):
             raise DirNotFoundError
         
         return dir_
@@ -471,7 +462,7 @@ class ElfinderVolumeDriver(object):
         while path and path != self._root:
             path = self._dirname(path)
             stat = self.stat(path)
-            if self.isHidden(stat) or not stat['read']:
+            if self._is_hidden(stat) or not stat['read']:
                 raise PermissionDeniedError
             
             tree[:0] = [stat]
@@ -492,14 +483,14 @@ class ElfinderVolumeDriver(object):
         stat = self.file(hash_)
         name = self._tmb_name(stat)
         
-        if stat['tmb'] != 1:
+        if 'tmb' in stat and stat['tmb'] != 1:
             return stat['tmb']
         
-        if not self.canCreateTmb(path, stat):
+        if not self._can_create_tmb(path, stat):
             raise PermissionDeniedError()
 
         #copy the image to the thumbnail
-        tmb  = self._joinPath(self._options['tmbPath'], name)
+        tmb  = self._join_path(self._options['tmbPath'], name)
         tmb_size = self._options['tmbSize']
         
         try:
@@ -540,7 +531,7 @@ class ElfinderVolumeDriver(object):
         """
         Return file size / total directory size
         """
-        return self.countSize(self.decode(hash_))
+        return self._size(self.decode(hash_))
     
     def open(self, hash_):
         """
@@ -558,7 +549,7 @@ class ElfinderVolumeDriver(object):
         """
         self._fclose(fp, path=self.decode(hash_))
 
-    def mkdir(self, dst, name):
+    def mkdir(self, hash_dst, name):
         """
         Create directory and return dir info
         """
@@ -566,29 +557,32 @@ class ElfinderVolumeDriver(object):
         if self.command_disabled('mkdir'):
             raise PermissionDeniedError
         
-        if not self.nameAccepted(name):
+        if not self._name_accepted(name):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
         
+        error_path = self.path(hash_dst)
+
         try:
-            dir_ = self.dir(dst) 
+            dir_ = self.dir(hash_dst) 
         except (FileNotFoundError, DirNotFoundError):
-            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % dst)
+            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % error_path)
         
         if not dir_['write']:
             raise PermissionDeniedError
         
-        path = self.decode(dst)
-        dst  = self._joinPath(path, name)
+        path = self.decode(hash_dst)
+        dst  = self._join_path(path, name)
         
         try:
             self.stat(dst)
             raise NamedError(ElfinderErrorMessages.ERROR_EXISTS, name)
         except:
+            #TODO: clear only container cache?
             self.clearcache()
 
         return self.stat(self._mkdir(dst))
     
-    def mkfile(self, dst, name):
+    def mkfile(self, hash_dst, name):
         """
         Create empty file and return its info
         """
@@ -596,24 +590,27 @@ class ElfinderVolumeDriver(object):
         if self.command_disabled('mkfile'):
             raise PermissionDeniedError
         
-        if not self.nameAccepted(name):
+        if not self._name_accepted(name):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
         
+        error_path = self.path(hash_dst)
+
         try:
-            dir_ = self.dir(dst)
+            dir_ = self.dir(hash_dst)
         except (FileNotFoundError, DirNotFoundError):
-            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % dst)
+            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % error_path)
         
-        path = self.decode(dst)
-        if not dir_['write'] or not self.attr(self._joinPath(path, name), 'write'):
+        path = self.decode(hash_dst)
+        if not dir_['write'] or not self.attr(self._join_path(path, name), 'write'):
             raise PermissionDeniedError
         
         try:
-            self.stat(self._joinPath(path, name))
+            self.stat(self._join_path(path, name))
             raise NamedError(ElfinderErrorMessages.ERROR_EXISTS, name)
         except os.error:
             pass
     
+        #TODO: clear only containing dir cache?
         self.clearcache()
         return self.stat(self._mkfile(path, name))
 
@@ -625,10 +622,10 @@ class ElfinderVolumeDriver(object):
         path = self.decode(hash_)
         dir_  = self._dirname(path)
 
-        if self.command_disabled('rename') or not self.attr(self._joinPath(dir_, name), 'write'):
+        if self.command_disabled('rename') or not self.attr(self._join_path(dir_, name), 'write'):
             raise PermissionDeniedError
         
-        if not self.nameAccepted(name):
+        if not self._name_accepted(name):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
 
         file_ = self.file(hash_)
@@ -637,11 +634,11 @@ class ElfinderVolumeDriver(object):
         if name == self._basename(path):
             return (file_, file_)
         
-        if self.isLocked(file_):
+        if self._is_locked(file_):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, file_['name'])
           
         try:
-            self.stat(self._joinPath(dir_, name))
+            self.stat(self._join_path(dir_, name))
             raise NamedError(ElfinderErrorMessages.ERROR_EXISTS, name)
         except os.error:
             pass
@@ -652,9 +649,11 @@ class ElfinderVolumeDriver(object):
         if not path:
             raise Exception('Unable to rename the file')
         
+        #TODO: clear specific keys only?
         self.clearcache()
+        self._removed.append(file_)
 
-        return (self.stat(path), file_) 
+        return self.stat(path) 
 
     def duplicate(self, hash_, suffix='copy'):
         """
@@ -669,14 +668,14 @@ class ElfinderVolumeDriver(object):
 
         path = self.decode(hash_)
         dir_  = self._dirname(path)
-        name = self.uniqueName(dir_, self._basename(path), ' %s ' % suffix)
+        name = self._unique_name(dir_, self._basename(path), ' %s ' % suffix)
 
-        if not self.attr(self._joinPath(dir_, name), 'write'):
+        if not self.attr(self._join_path(dir_, name), 'write'):
             raise PermissionDeniedError
 
         return self.stat(self.copy(path, dir_, name))
     
-    def upload(self, uploaded_file, dst):
+    def upload(self, uploaded_file, hash_dst):
         """
         Save uploaded file. 
         On success return array with new file stat and with removed file hash (if existed file was replaced)
@@ -685,15 +684,17 @@ class ElfinderVolumeDriver(object):
         if self.command_disabled('upload'):
             raise PermissionDeniedError
         
+        error_path = self.path(hash_dst)
+    
         try:
-            dir_ = self.dir(dst)
+            dir_ = self.dir(hash_dst)
         except (FileNotFoundError, DirNotFoundError):
-            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % dst)
+            raise NamedError(ElfinderErrorMessages.ERROR_TRGDIR_NOT_FOUND, '#%s' % error_path)
 
         if not dir_['write']:
             raise PermissionDeniedError
         
-        if not self.nameAccepted(uploaded_file.name):
+        if not self._name_accepted(uploaded_file.name):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
         
         mime = uploaded_file.content_type 
@@ -718,14 +719,13 @@ class ElfinderVolumeDriver(object):
         if self._options['uploadMaxSize'] > 0 and uploaded_file.size > self._options['uploadMaxSize']:
             raise Exception(ElfinderErrorMessages.ERROR_UPLOAD_FILE_SIZE)
 
-        dstpath = self.decode(dst)
+        dst = self.decode(hash_dst)
         name = uploaded_file.name
-        test = self._joinPath(dstpath, name)
+        test = self._join_path(dst, name)
 
         try:
             file_ = self.stat(test)
             #file exists
-            self.clearcache()
             if self._options['uploadOverwrite']:
                 if not file_['write']:
                     raise PermissionDeniedError
@@ -733,7 +733,7 @@ class ElfinderVolumeDriver(object):
                     raise NamedError(ElfinderErrorMessages.ERROR_NOT_REPLACE, uploaded_file.name)
                 self.remove(test)
             else:
-                name = self.uniqueName(dstpath, uploaded_file.name, '-', False)
+                name = self._unique_name(dst, uploaded_file.name, '-', False)
         except os.error: #file does not exist
             pass
         
@@ -744,21 +744,22 @@ class ElfinderVolumeDriver(object):
         except:
             pass #file is not an image
 
-        #self.clearcache()
-        return self.stat(self._save_uploaded(uploaded_file, dstpath, name, **kwargs))
+        #TODO: clear containing dir cache?
+        self.clearcache()
+        return self.stat(self._save_uploaded(uploaded_file, dst, name, **kwargs))
     
-    def paste(self, volume, src, dst, rmSrc = False):
+    def paste(self, volume, hash_src, dst, rm_src = False):
         """
         Paste files
         """
         
-        if self.command_disabled('paste'):
+        if self.command_disabled('paste') or (volume==self and rm_src and self.command_disabled('rm')) (volume!=self and rm_src and volume.command_disabled('rm')):
             raise PermissionDeniedError
 
         #check if src file exists, throw FileNotFoundError if it doesn't
-        file_ = volume.file(src)
+        file_ = volume.file(hash_src)
         name = file_['name']
-        errpath = volume.path(src)
+        error_path = volume.path(hash_src)
         
         try:
             dir_ = self.dir(dst)
@@ -770,18 +771,17 @@ class ElfinderVolumeDriver(object):
 
         destination = self.decode(dst)
 
-        test = volume.closest(src, 'locked' if rmSrc else 'read', rmSrc)
+        test = volume.closest(hash_src, 'locked' if rm_src else 'read', rm_src)
         if test:
-            raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, volume.path(test)) if rmSrc else PermissionDeniedError
+            raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, volume.path(test)) if rm_src else PermissionDeniedError
 
-        test = self._joinPath(destination, name)
+        test = self._join_path(destination, name)
         try:
             stat = self.stat(test)
             #file exists
-            self.clearcache()
             if self._options['copyOverwrite']:
                 #do not replace file with dir or dir with file
-                if not self.isSameType(file_['mime'], stat['mime']):
+                if (file_['mime'] == 'directory' and stat['mime'] != 'directory') or (file_['mime'] != 'directory' and stat['mime'] == 'directory'):
                     raise NamedError(ElfinderErrorMessages.ERROR_NOT_REPLACE, self._path(test))
                 #existed file is not writable
                 if not stat['write']:
@@ -791,44 +791,41 @@ class ElfinderVolumeDriver(object):
                 if locked:
                     raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, self._path(locked))
                 #target is entity file of alias
-                if volume == self and (test == file_['target'] or test == self.decode(src)):
-                    raise NamedError(ElfinderErrorMessages.ERROR_REPLACE, errpath)
-                #remove existed file
-                if not self.remove(test):
-                    raise NamedError(ElfinderErrorMessages.ERROR_REPLACE, self._path(test))
+                if volume == self and (test == file_['target'] or test == self.decode(hash_src)):
+                    raise NamedError(ElfinderErrorMessages.ERROR_REPLACE, error_path)
+                #remove existing file
+                self.remove(test)
             else:
-                name = self.uniqueName(destination, name, ' ', False)
+                name = self._unique_name(destination, name, ' ', False)
         except os.error:
             pass
         
         #copy/move inside current volume
         if (volume == self):
-            source = self.decode(src)
+            source = self.decode(hash_src)
             #do not copy into itself
             if self._inpath(destination, source):
-                raise NamedError(ElfinderErrorMessages.ERROR_COPY_ITSELF, errpath)
-            if rmSrc:
+                raise NamedError(ElfinderErrorMessages.ERROR_COPY_ITSELF, error_path)
+            if rm_src:
                 path = self.move(source, destination, name)
             else:
                 path = self.copy(source, destination, name)
-            return self.stat(path)
+        else:
+            #copy/move from another volume
+            if not self._options['copyTo'] or not volume.copy_from_allowed():
+                raise PermissionDeniedError()
         
-        #copy/move from another volume
-        if not self._options['copyTo'] or not volume.copy_from_allowed():
-            raise PermissionDeniedError()
+            path = self.copyFrom(volume, hash_src, destination, name)
         
-        path = self.copyFrom(volume, src, destination, name)
-        
-        if rmSrc:
-            try:
-                volume.rm(src)
-                self._removed.append(file_)
-            except:
-                raise Exception(ElfinderErrorMessages.ERROR_RM_SRC)
+            if rm_src:
+                try:
+                    volume.rm(hash_src)
+                except:
+                    raise Exception(ElfinderErrorMessages.ERROR_RM_SRC)
 
         return self.stat(path)
 
-    def getContents(self, hash_):
+    def get_contents(self, hash_):
         """
         Return file contents
         """
@@ -841,9 +838,9 @@ class ElfinderVolumeDriver(object):
         if not file_['read']:
             raise PermissionDeniedError()
         
-        return self._getContents(self.decode(hash_))
+        return self._get_contents(self.decode(hash_))
     
-    def putContents(self, hash_, content):
+    def put_contents(self, hash_, content):
         """
         Put content in text file and return file info.
         """
@@ -856,8 +853,9 @@ class ElfinderVolumeDriver(object):
         if not file_['write']:
             raise PermissionDeniedError()
 
+        #TODO: clear specific cache key
         self.clearcache()
-        self._filePutContents(path, content)
+        self._put_contents(path, content)
         return self.stat(path)
     
     def extract(self, hash_):
@@ -915,7 +913,7 @@ class ElfinderVolumeDriver(object):
             files.append(self._basename(path))
         
         name = '%s.%s' % (files[0] if len(files) == 1 else 'Archive', archiver['ext'])
-        name = self.uniqueName(dir_, name, '')
+        name = self._unique_name(dir_, name, '')
         
         self.clearcache()
         path = self._archive(dir_, files, name, archiver)
@@ -923,7 +921,7 @@ class ElfinderVolumeDriver(object):
 
     def resize(self, hash_, width, height, x, y, mode = 'resize', bg = '', degree = 0):
         """
-        Resize image
+        Resize image.
         """
 
         if self.command_disabled('resize'):
@@ -934,10 +932,10 @@ class ElfinderVolumeDriver(object):
         if not file_['write'] or not file_['read']:
             raise PermissionDeniedError()
         
-        path = self.decode(hash_)
-        if not self.canResize(path, file_):
+        if not file_['mime'].startswith('image'):
             raise Exception(ElfinderErrorMessages.ERROR_UNSUPPORT_TYPE)
 
+        path = self.decode(hash_)
         if mode == 'propresize':
             result = self._img_resize(path, path, width, height, True, True)
         elif mode == 'crop':
@@ -968,7 +966,7 @@ class ElfinderVolumeDriver(object):
         """
         Search files
         """
-        return self.doSearch(self._root, q)
+        return self._search(self._root, q)
 
     def dimensions(self, hash_):
         """
@@ -995,7 +993,7 @@ class ElfinderVolumeDriver(object):
             if not p:
                 p = self._separator
 
-            hash_ = self.crypt(p)
+            hash_ = self._crypt(p)
             #hash is used as id in HTML that means it must contain vaild chars
             #make base64 html safe and append prefix in begining
             hash_ = b64encode(hash_).translate(maketrans('+/=', '-_.'))
@@ -1019,64 +1017,24 @@ class ElfinderVolumeDriver(object):
             h += "=" * ((4 - len(h) % 4) % 4)
             h = b64decode(h)
 
-            path = self.uncrypt(h) 
+            path = self._uncrypt(h) 
             #append ROOT to path after it was cut in encode
             return self._abspath(path)
 
         raise FileNotFoundError
     
-    def crypt(self, path):
+    def _crypt(self, path):
         """
-        Return crypted path 
-        Not implemented
+        Return crypted path.
         """
+        #TODO: crypt and encrypt paths
         return path
     
-    def uncrypt(self, hash_):
+    def _uncrypt(self, hash_):
         """
-        Return uncrypted path 
-        Not implemented
+        Return uncrypted path.
         """
         return hash_
-    
-    def nameAccepted(self, name):
-        """
-        Validate file name based on self._options['acceptedName'] regular
-        expression.
-        """
-        if self._options['acceptedName']:
-            return re.search(self._options['acceptedName'], name)
-        return True
-
-    def uniqueName(self, dir_, name, suffix = ' copy', checkNum=True):
-        """
-        Return new unique name based on file name and suffix
-        """
-        ext  = ''
-        m = re.search(r'\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$', name, re.IGNORECASE)
-        if m:
-            ext  = '.%s' % m.group(1)
-            name = name[0:len(name)-len(m.group(0))] 
-        
-        m = re.search('(%s)(\d*)$' % suffix, name, re.IGNORECASE)
-        if checkNum and m and m.group(2):
-            i = int(m.group(2))
-            name = name[0:len(name)-len(m.group(2))]
-        else:
-            i = 1
-            name += suffix
-
-        max_ = i+100000
-        while i <= max_:
-            n = '%s%s%s' % (name, (i if i > 0 else ''), ext)
-            try:
-                self.stat(self._joinPath(dir_, n))
-            except os.error:
-                self.clearcache()
-                return n
-            i+=1
-
-        return name+md5(dir_)+ext
     
     #*********************** file stat *********************#
     
@@ -1138,10 +1096,10 @@ class ElfinderVolumeDriver(object):
 
         stat['read'] = int(self.attr(path, 'read', stat['read']))
         stat['write'] = int(self.attr(path, 'write', stat['write']))
-        stat['locked'] = int(self.attr(path, 'locked', self.isLocked(stat))) 
-        stat['hidden'] = int(self.attr(path, 'hidden', self.isHidden(stat)) and self.mime_accepted(stat['mime'])) 
+        stat['locked'] = int(self.attr(path, 'locked', self._is_locked(stat)))
+        stat['hidden'] = int(self.attr(path, 'hidden', self._is_hidden(stat)) and self.mime_accepted(stat['mime'])) 
 
-        if stat['read'] and not self.isHidden(stat):
+        if stat['read'] and not self._is_hidden(stat):
 
             if stat['mime'] == 'directory': #handle directories
                 if self._options['checkSubfolders']:
@@ -1155,7 +1113,8 @@ class ElfinderVolumeDriver(object):
                 else:
                     stat['dirs'] = 1
             else: #file
-                stat['tmb'] = self._get_tmb(stat['target'] if 'target' in stat else path, stat)
+                if not 'tmb' in stat and self._can_create_tmb(path, stat):
+                    stat['tmb'] = self._get_tmb(stat['target'] if 'target' in stat else path, stat)
         
         if 'alias' in stat and stat['alias'] and 'target' in stat and stat['target']:
             stat['thash'] = self.encode(stat['target'])
@@ -1163,7 +1122,7 @@ class ElfinderVolumeDriver(object):
 
         statCache[path] = stat
 
-    def cacheDir(self, path):
+    def _cache_dir(self, path):
         """
         Get stat for folder content and put in the cache.
         """
@@ -1172,7 +1131,7 @@ class ElfinderVolumeDriver(object):
 
         for p in self._scandir(path):
             stat = self.stat(p)
-            if not self.isHidden(stat):
+            if not self._is_hidden(stat):
                 dirsCache[path].append(p)
         cache.set(self._get_cache_keys()[0], dirsCache)
         return dirsCache[path]
@@ -1209,18 +1168,16 @@ class ElfinderVolumeDriver(object):
         """
         return mimetypes.guess_type(path)[0]
     
-    def countSize(self, path):
+    def _size(self, path):
         """
         Return file/total directory size
         """
         try:
             stat = self.stat(path)
         except os.error:
-            #used to return 'unknown' but 0 is more suitable for adding sizes
             return 0  
         
-        if not stat['read'] or self.isHidden(stat):
-            #used to return 'unknown' but 0 is more suitable for adding sizes
+        if not stat['read'] or self._is_hidden(stat):
             return 0
         
         if stat['mime'] != 'directory':
@@ -1229,19 +1186,14 @@ class ElfinderVolumeDriver(object):
         subdirs = self._options['checkSubfolders']
         self._options['checkSubfolders'] = True
         result = 0
+
         for stat in self.getScandir(path):
-            size = self.countSize(self._joinPath(path, stat['name'])) if stat['mime'] == 'directory' and stat['read'] else stat['size']
+            size = self._size(self._join_path(path, stat['name'])) if stat['mime'] == 'directory' and stat['read'] else stat['size']
             if (size > 0):
                 result += size
 
         self._options['checkSubfolders'] = subdirs
         return result
-
-    def isSameType(self, mime1, mime2):
-        """
-        Return True if all mimes is directory or files
-        """
-        return (mime1 == 'directory' and mime1 == mime2) or (mime1 != 'directory' and mime2 != 'directory')
 
     def closestByAttr(self, path, attr, val):
         """
@@ -1279,11 +1231,11 @@ class ElfinderVolumeDriver(object):
         files = []
         dir_ = self._get_cached_dir(path)
         if not dir_:
-            dir_ = self._get_cached_dir(path)
+            dir_ = self._cache_dir(path)
 
         for p in dir_:
             stat = self.stat(p)
-            if not self.isHidden(stat):
+            if not self._is_hidden(stat):
                 files.append(stat)
 
         return files
@@ -1296,19 +1248,20 @@ class ElfinderVolumeDriver(object):
         
         dirsCache = self._get_cached_dir(path)
         if not dirsCache:
-            dirsCache = self.cacheDir(path)
+            dirsCache = self._cache_dir(path)
 
         for p in dirsCache:
             stat = self.stat(p)
-            if not self.isHidden(stat) and p != exclude and stat['mime'] == 'directory':
+            if not self._is_hidden(stat) and p != exclude and stat['mime'] == 'directory':
                 dirs.append(stat)
                 if deep > 0 and 'dirs' in stat and stat['dirs']:
                     dirs += self.gettree(p, deep-1)
         return dirs
 
-    def doSearch(self, path, q):
+    def _search(self, path, q):
         """
-        Recursive files search
+        Recursively search for files in the specified path,
+        based on the ``q`` query.
         """
         result = []
         for p in self._scandir(path):
@@ -1317,7 +1270,7 @@ class ElfinderVolumeDriver(object):
             except os.error: #invalid links
                 continue
 
-            if self.isHidden(stat) or not self.mime_accepted(stat['mime']):
+            if self._is_hidden(stat) or not self.mime_accepted(stat['mime']):
                 continue
             
             name = stat['name']
@@ -1329,7 +1282,7 @@ class ElfinderVolumeDriver(object):
                 result.append(stat)
 
             if stat['mime'] == 'directory' and stat['read'] and not 'alias' in  stat:
-                result += self.doSearch(p, q)
+                result += self._search(p, q)
 
         return result
         
@@ -1354,10 +1307,10 @@ class ElfinderVolumeDriver(object):
             except:
                 raise NamedError(ElfinderErrorMessages.ERROR_COPY, self._path(src))
             
-            return self._joinPath(dst, name)
+            return self._join_path(dst, name)
         
         if srcStat['mime'] == 'directory':
-            test = self.stat(self._joinPath(dst, name))
+            test = self.stat(self._join_path(dst, name))
             
             if test['mime'] != 'directory': 
                 raise NamedError(ElfinderErrorMessages.ERROR_COPY, self._path(src))
@@ -1367,12 +1320,12 @@ class ElfinderVolumeDriver(object):
             except:
                 raise NamedError(ElfinderErrorMessages.ERROR_COPY, self._path(src)) 
             
-            dst = self._joinPath(dst, name)
+            dst = self._join_path(dst, name)
             for stat in self.getScandir(src):
-                if not self.isHidden(stat):
+                if not self._is_hidden(stat):
                     name = stat['name']
                     try:
-                        self.copy(self._joinPath(src, name), dst, name)
+                        self.copy(self._join_path(src, name), dst, name)
                     except:
                         self.remove(dst, True) #fall back
                         return None
@@ -1385,7 +1338,7 @@ class ElfinderVolumeDriver(object):
         except:
             raise NamedError(ElfinderErrorMessages.ERROR_COPY, self._path(src))
         
-        return self._joinPath(dst, name)
+        return self._join_path(dst, name)
 
     def move(self, src, dst, name):
         """
@@ -1401,7 +1354,7 @@ class ElfinderVolumeDriver(object):
         try:
             self._move(src, dst, name)
             self._removed.append(stat)
-            return self._joinPath(dst, name)
+            return self._join_path(dst, name)
         except:
             raise NamedError(ElfinderErrorMessages.ERROR_MOVE, self._path(src))
 
@@ -1418,19 +1371,19 @@ class ElfinderVolumeDriver(object):
         
         errpath = volume.path(src)
         
-        if not self.nameAccepted(source['name']):
+        if not self._name_accepted(source['name']):
             raise Exception(ElfinderErrorMessages.ERROR_INVALID_NAME)
                 
         if not source['read']:
             raise PermissionDeniedError()
         
         if source['mime'] == 'directory':
-            stat = self.stat(self._joinPath(destination, name))
+            stat = self.stat(self._join_path(destination, name))
             self.clearcache()
             if stat['mime'] != 'directory' and not self._mkdir(destination, name):
                 raise NamedError(ElfinderErrorMessages.ERROR_COPY, errpath)
             
-            path = self._joinPath(destination, name) 
+            path = self._join_path(destination, name) 
             for entry in volume.scandir(src):
                 if not self.copyFrom(volume, entry['hash'], path, entry['name']):
                     return False
@@ -1469,7 +1422,7 @@ class ElfinderVolumeDriver(object):
         self.rmTmb(stat)
         self.clearcache()
         
-        if not force and self.isLocked(stat):
+        if not force and self._is_locked(stat):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, self._path(path))
 
         if stat['mime'] == 'directory':
@@ -1490,6 +1443,7 @@ class ElfinderVolumeDriver(object):
             except:
                 raise NamedError(ElfinderErrorMessages.ERROR_RM, self._path(path))
 
+        #TODO: update cache key
         self._removed.append(stat)
     
     #************************* thumbnails **************************#
@@ -1511,25 +1465,18 @@ class ElfinderVolumeDriver(object):
 
             name = self._tmb_name(stat)
             try:
-                self.stat(self._joinPath(self._options['tmbPath'], name))
+                self.stat(self._join_path(self._options['tmbPath'], name))
                 return name
             except os.error:
                 pass
         #default thumbnail value
         return 1
 
-    def canCreateTmb(self, path, stat):
+    def _can_create_tmb(self, path, stat):
         """
-        Return True if thumnbnail for required file can be created
+        Return True if thumnbnail for required file can be created.
         """
         return self._tmb_path_writable and not path.startswith(self._options['tmbPath']) and stat['mime'].startswith('image') 
-
-    def canResize(self, path, stat):
-        """
-        Return True if required file can be resized.
-        By default - the same as canCreateTmb
-        """
-        return self.canCreateTmb(path, stat)
 
     def _img_resize(self, path, target, width, height, keepProportions = False, resizeByBiggerSide = True, destformat = None):
         """
@@ -1626,8 +1573,8 @@ class ElfinderVolumeDriver(object):
         if stat['mime'] == 'directory':
             for p in self._scandir(self.decode(stat['hash'])):
                 self.rmTmb(self.stat(p))
-        elif stat['tmb'] != 1:
-            tmb = self._joinPath(self._options['tmbPath'], stat['tmb'])
+        elif 'tmb' in stat and stat['tmb'] != 1:
+            tmb = self._join_path(self._options['tmbPath'], stat['tmb'])
             try:
                 self._unlink(tmb)
             except:
@@ -1684,13 +1631,43 @@ class ElfinderVolumeDriver(object):
                     
     #****************util methods ********************#
     
-    def isHidden(self, stat):
+    def _name_accepted(self, name):
+        """
+        Validate file name based on self._options['acceptedName'] regular
+        expression.
+        """
+        if self._options['acceptedName']:
+            return re.search(self._options['acceptedName'], name)
+        return True
+    
+    def _unique_name(self, dir_, name, suffix = ' copy', check_num=True):
+        """
+        Return new unique name based on file name and suffix
+        """
+        
+        ext  = ''
+        m = re.search(r'\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$', name, re.IGNORECASE)
+        if m:
+            ext  = '.%s' % m.group(1)
+            name = name[0:len(name)-len(m.group(0))] 
+        
+        m = re.search('(%s)(\d*)$' % suffix, name, re.IGNORECASE)
+        if check_num and m and m.group(2):
+            i = int(m.group(2))
+            name = name[0:len(name)-len(m.group(2))]
+        else:
+            i = 1
+            name += suffix
+
+        return self._get_available_name(dir_, name, ext, i)
+    
+    def _is_hidden(self, stat):
         """
         Check if the file/directory is hidden
         """
         return 'hidden' in stat and stat['hidden']
 
-    def isLocked(self, stat):
+    def _is_locked(self, stat):
         """
         Check if the file/directory is locked
         """
@@ -1700,12 +1677,6 @@ class ElfinderVolumeDriver(object):
         if re.search("[^/?&=]$", url):
             url += '/'
         return url
-    
-    def _dirname(self, path):
-        """
-        Return parent directory path
-        """
-        raise NotImplementedError
 
     def _relpath(self, path):
         """
@@ -1717,14 +1688,14 @@ class ElfinderVolumeDriver(object):
         """
         Convert path related to root dir into real path
         """
-        return self._root if path == self._separator else self._joinPath(self._root, path)
+        return self._root if path == self._separator else self._join_path(self._root, path)
 
     def _path(self, path):
         """
         Return fake path started from root dir.
         Required to show path on client side.
         """
-        return self._root_name if path == self._root else self._joinPath(self._root_name, self._relpath(path))
+        return self._root_name if path == self._root else self._join_path(self._root_name, self._relpath(path))
      
     def _inpath(self, path, parent):
         """
@@ -1752,13 +1723,19 @@ class ElfinderVolumeDriver(object):
     #*                  API TO BE IMPLEMENTED IN SUB-CLASSES             *#
     #*********************************************************************#
 
+    def _dirname(self, path):
+        """
+        Return parent directory path
+        """
+        raise NotImplementedError
+
     def _basename(self, path):
         """
         Return file name
         """
         raise NotImplementedError
 
-    def _joinPath(self, path1, path2):
+    def _join_path(self, path1, path2):
         """
         Join two paths and return full path. If the latter path is
         absolute, return it.
@@ -1900,13 +1877,13 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-    def _getContents(self, path):
+    def _get_contents(self, path):
         """
         Get file contents
         """
         raise NotImplementedError
 
-    def _filePutContents(self, path, content):
+    def _put_contents(self, path, content):
         """
         Write a string to a file
         """

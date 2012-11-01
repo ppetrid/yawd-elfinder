@@ -109,13 +109,6 @@ class ElfinderConnector:
         """
         return self._commands[cmd] if self.commandExists(cmd) else {}
     
-    def realpath(self, hash_):
-        """
-        Return file real path.
-        Raises a VolumeNotFoundError exception if volume was not found.
-        """
-        return self._volume(hash_).realpath(hash_)
-    
     #def getNetVolumes(self):
     #    """
     #    Return  network volumes config.
@@ -175,7 +168,7 @@ class ElfinderConnector:
         if 'removed' in result:
             for id_ in self._volumes:
                 result['removed'] += self._volumes[id_].removed()
-                self._volumes[id_].resetRemoved()
+                self._volumes[id_].reset_removed()
             #replace removed files info with removed files hashes and filter out duplicates
             result['removed'] = list(set([f['hash'] for f in result['removed']]))
         
@@ -463,8 +456,7 @@ class ElfinderConnector:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
 
         try:
-            renamed_tuple = volume.rename(target, name)
-            return { 'added' : [renamed_tuple[0]], 'removed' : [renamed_tuple[1]] }
+            return { 'added' : volume.rename(target, name), 'removed' : volume.removed() }
         except NamedError as e:
             return { 'error' : self.error(e.name, ElfinderErrorMessages.ERROR_RENAME) }
         except FileNotFoundError:
@@ -601,7 +593,7 @@ class ElfinderConnector:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, u'#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND)}
         
         try:
-            content = volume.getContents(target)
+            content = volume.get_contents(target)
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, volume.path(target), e)}
         
@@ -628,7 +620,7 @@ class ElfinderConnector:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_SAVE, u'#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND)}
         
         try:
-            return {'changed' : [volume.putContents(target, content)]} 
+            return {'changed' : [volume.put_contents(target, content)]} 
         except Exception as e:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_SAVE, volume.path(target), e)}
 
