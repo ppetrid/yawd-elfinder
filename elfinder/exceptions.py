@@ -70,7 +70,7 @@ class DirNotFoundError(Exception):
         
 class PermissionDeniedError(Exception):
     def __init__(self):
-        super(DirNotFoundError, self).__init__(ElfinderErrorMessages.ERROR_PERM_DENIED)
+        super(PermissionDeniedError, self).__init__(ElfinderErrorMessages.ERROR_PERM_DENIED)
 
 class NamedError(Exception):
     """
@@ -84,4 +84,4 @@ class NamedError(Exception):
         
 class NotAnImageError(Exception):
     def __init__(self):
-        super(DirNotFoundError, self).__init__(_('This is not a valid image file'))
+        super(NotAnImageError, self).__init__(_('This is not a valid image file'))
