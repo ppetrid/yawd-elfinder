@@ -297,10 +297,10 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         return os.rmdir(path)
 
-    def _save(self, fp, dir_, name, **kwargs):
+    def _save(self, fp, dir_, name):
         """
         Create new file and write into it from file pointer.
-        Return new file path or False on error.
+        Return new file path or raise an Exception.
         """
         path = self._join_path(dir_, name)
         target = open(path, 'wb')

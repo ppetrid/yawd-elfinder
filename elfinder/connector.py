@@ -59,24 +59,32 @@ class ElfinderConnector:
         #    opts['roots'].append(root)
 
         for o in opts['roots']:
-            class_ = o['driver'] if 'driver' in o else ''  
-                      
-            try:
-                volume = class_()
-            except TypeError:
-                self._mountErrors.append('Driver "%s" does not exist' % class_)
-                continue
 
-            try:
-                volume.mount(o)
-            except Exception as e:
-                #raise the exception in debug mode
-                if settings.DEBUG:
-                    raise
-
-                self._mountErrors.append('Driver "%s" " %s' % (class_, e))
-                break
+            class_ = o['driver'] if 'driver' in o else ''
             
+            if 'driverInstance' in o and isinstance(o['driverInstance'], class_):
+                volume = o['driverInstance']
+            else:
+                try:
+                    volume = class_()
+                except TypeError:
+                    self._mountErrors.append('Driver "%s" does not exist' % class_)
+                    continue
+    
+                try:
+                    volume.mount(o)
+                except Exception as e:
+                    #raise the exception in debug mode
+                    if settings.DEBUG:
+                        raise
+    
+                    self._mountErrors.append('Driver "%s" " %s' % (class_, e))
+                    break
+                
+                #store driver instance in memory, if the 'keepAlive' option is set
+                if 'keepAlive' in o and o['keepAlive']:
+                    o['driverInstance'] = volume
+
             id_ = volume.id()
             self._volumes[id_] = volume
             if not self._default and volume.is_readable():
@@ -203,6 +211,12 @@ class ElfinderConnector:
         method must be used.
         """
 
+        if isinstance(init, basestring):
+            init = int(init)
+            
+        if isinstance(tree, basestring):
+            tree = int(tree)
+
         if not init and not target:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_INV_PARAMS, 'open')}
 
@@ -222,15 +236,15 @@ class ElfinderConnector:
                 volume = self._default
         
         try:
-            cwd = volume.dir(hash_=target, resolveLink=True)
+            cwd = volume.dir(hash_=target, resolve_link=True)
             if not cwd['read'] and init:
                 try:
-                    cwd = volume.dir(hash_=volume.default_path(), resolveLink=True)
+                    cwd = volume.dir(hash_=volume.default_path(), resolve_link=True)
                 except (DirNotFoundError, FileNotFoundError) as e:
                     return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, e)}
         except (DirNotFoundError, FileNotFoundError) as e:
             if init:
-                cwd = volume.dir(hash_=volume.default_path(), resolveLink=True)
+                cwd = volume.dir(hash_=volume.default_path(), resolve_link=True)
             else:
                 if settings.DEBUG:
                     raise
@@ -332,6 +346,10 @@ class ElfinderConnector:
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
         method must be used.
         """
+        
+        if isinstance(download, basestring):
+            download = int(download)
+        
         try:
             volume = self._volume(target)
             file_ = volume.file(target)
@@ -521,6 +539,10 @@ class ElfinderConnector:
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
         method must be used.
         """
+        
+        if isinstance(html, basestring):
+            html = int(html)
+        
         header = { 'Content-Type' : 'text/html; charset=utf-8' } if html else {}
         result = { 'added' : [], 'header' : header }
 
@@ -555,6 +577,10 @@ class ElfinderConnector:
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
         method must be used.
         """
+        
+        if isinstance(cut, basestring):
+            cut = int(cut)
+
         error = ElfinderErrorMessages.ERROR_MOVE if cut else ElfinderErrorMessages.ERROR_COPY
         result = { 'added' : [], 'removed' : [] }
         
@@ -569,12 +595,14 @@ class ElfinderConnector:
             except VolumeNotFoundError:
                 result['warning'] = self.error(error, u'#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND)
                 continue
-            
+
             try:
                 result['added'].append(dstVolume.paste(srcVolume, target, dst, cut))
             except NamedError as e:
                 result['warning'] = self.error(e, e.name)
             except Exception as e:
+                if settings.DEBUG:
+                    raise
                 result['warning'] = self.error(e)
 
         return result
@@ -679,6 +707,10 @@ class ElfinderConnector:
         directly, the :meth:`elfinder.connector.ElfinderConnector.execute`
         method must be used.
         """
+        
+        if isinstance(options, basestring):
+            options = int(options)
+        
         files = []
         for hash_ in targets:
             try:
