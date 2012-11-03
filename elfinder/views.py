@@ -93,7 +93,7 @@ class ElfinderConnectorView(View):
             return 'open'
         
     def get_optionset(self, **kwargs):
-        set_ = ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']].copy()
+        set_ = ls.ELFINDER_CONNECTOR_OPTION_SETS[kwargs['optionset']]
         if kwargs['start_path'] != 'default':
             for root in set_['roots']:
                 root['startPath'] = kwargs['start_path']
