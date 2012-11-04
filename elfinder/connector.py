@@ -164,7 +164,7 @@ class ElfinderConnector:
                 self._volumes[id_].set_mimes_filter(kwargs['mimes'])
             kwargs.pop('mimes')
 
-        debug = self._debug or ('debug' in kwargs and kwargs['debug'])
+        debug = self._debug or ('debug' in kwargs and int(kwargs['debug']))
         #remove debug kewyord argument  
         if 'debug' in kwargs:
             kwargs.pop('debug')
