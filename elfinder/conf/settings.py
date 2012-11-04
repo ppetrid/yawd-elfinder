@@ -50,8 +50,6 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                 #'separator' : os.sep,
                 #directory for thumbnails
                 #'tmbPath' : '.tmb',
-                #mode to create thumbnails dir
-                #'tmbPathMode' : 0777,
                 #Thumbnails dir URL. Set this if you're storing thumbnails outside the root directory
                 #'tmbURL' : '',
                 #Thumbnail size (in px)

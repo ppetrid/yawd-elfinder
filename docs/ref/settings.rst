@@ -193,16 +193,7 @@ tmbPath
 
 Default: ``'.tmb'``
 
-The directory under which auto-generated thumbnails will be placed. 
-
-.. _setting-tmbPathMode:
-
-tmbPathMode
-+++++++++++
-
-Default: ``0777``
-
-Access rights of the thumbnail directory.
+The directory under which auto-generated thumbnails will be placed.
 
 .. _setting-tmbURL:
 
@@ -340,9 +331,10 @@ The order in which to proccess :ref:`setting-uploadAllow` and
 uploadMaxSize
 +++++++++++++
 
-Default: ``'128m'``
+Default: ``'0'``
 
-The maximum upload file size. 
+The maximum upload file size. Set as number (bytes) or string ending 
+with the size unit (e.g. "10M", "500K", "1G")
 
 .. note::
    this corresponds to each uploaded file. It is a hard limit.
@@ -451,7 +443,7 @@ A list of permissions for specific file name patterns. Each value in the
 list must be a dictionary containing at least a ``pattern`` key and one or
 more of the ``read``, ``write``, ``locked`` and ``hidden`` properties. 
 Any filename will be validated against the ``pattern`` and if a match is 
-found, the permission rules will be applied.
+found, the permission rules will be applied. The first match is retunrf.
 
 For example, to hide and lock the default thumbnails directory (to prevent
 viewing and deleting the directory), you could set this to::
@@ -547,6 +539,38 @@ Default: ``0``
 The maximum allowed size of a new archive file. `0` means that there
 is no size restriction.
 
+.. _setting-keepAlive:
+
+keepAlive
+++++++++++++++
+
+Default: ``False``
+
+If ``True``, instantiation and mount of this volume driver happens only once
+during the application lifetime. This can be set to ``False`` for local 
+volumes or quick remote drivers to avoid memory overhead. It is very useful 
+to enable it for volumes using RESTful APIs or other protocols that can 
+be slow to initialize and mount.
+
+.. _setting-cache:
+
+cache
++++++
+  
+Default: ``600``
+
+The time in seconds for which yawd-elfinder will store file and dir listings
+in the cache. The higher the value, the less disk read operations are
+performed. Especially when it comes to remote volumes a higher value
+might be better. ``0`` seconds means that internal caching is disabled. 
+
+..note:: Although not recommended, there might be some cases where 
+you should lower the cache. If disk contents change constantly
+(i.e. from batch processes or 3rd party applications) you might
+find yawd-elfinder displaying the wrong data.For example if you manually
+delete a file from disk, it could theoretically take up to 10 minutes
+for yawd-elfinder to notice with the default value. However in typical
+set-ups this is not an issue.
 
 ************************
 Volume-specific settings
