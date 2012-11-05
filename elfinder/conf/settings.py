@@ -109,6 +109,8 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                     #    'locked' : True
                     #},
                 ],
+                #quarantine folder name - required to check archive (must be hidden)
+                #'quarantine' : '.quarantine',
                 #Allowed archive's mimetypes to create. Leave empty for all available types.
                 #'archiveMimes' : [],
                 #Manual config for archivers. Leave empty for auto detect
@@ -121,7 +123,9 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
                     #they should operate like python's built-in tarfile.TarFile classes
                     #for more information see http://docs.python.org/library/tarfile.html
                     #'extract' : { 'ext' : 'rar', 'archiver' : MyRarExtractor },
-                }
+                },
+                #seconds to cache the file and dir data used by the driver 
+                #'cache' : 600
             }
         ]
     },

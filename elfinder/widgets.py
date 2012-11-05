@@ -77,7 +77,7 @@ class ElfinderWidget(forms.HiddenInput):
                 '                %(file)s,\n'
                 '                %(elfinder)s,\n'
                 '                keywords : { size : "%(size)s", path : "%(path)s", link : "%(link)s", modified : "%(modified)s", dimensions : "%(dimensions)s", update : "%(update)s", set : "%(set)s", clear : "%(clear)s" }'
-                '            })\n'
+                '            });\n'
                 '        })\n'
                 '    })(jQuery)\n'
                 '</script>' % {

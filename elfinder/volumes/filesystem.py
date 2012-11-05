@@ -24,7 +24,6 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         
         self._options['dirMode']  = 0755 #new dirs mode
         self._options['fileMode'] = 0644 #new files mode
-        self._options['quarantine'] = '.quarantine' #quarantine folder name - required to check archive (must be hidden)
         
     #*********************************************************************#
     #*                        INIT AND CONFIGURE                         *#
@@ -51,36 +50,12 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         self._aroot = os.path.realpath(self._root)
 
-        if self._options['quarantine']:
-            self._attributes.append({
-                'pattern' : '^%s$' % re.escape('%s%s' % (self._separator, self._options['quarantine'])),
-                'read' : False,
-                'write' : False,
-                'locked' : True,
-                'hidden': True
-            })
-
         super(ElfinderVolumeLocalFileSystem, self)._configure()
 
         #if no thumbnails url - try to detect it
         if not self._options['tmbURL'] and self._options['URL']:
             if self._options['tmbPath'].startswith(self._root):
                 self._options['tmbURL'] = self._urlize(self._options['URL'] + self._options['tmbPath'][len(self._root)+1:].replace(self._separator, '/'))
-
-        #check quarantine dir
-        if self._options['quarantine']:
-            self._quarantine = self._join_path(self._root, self._options['quarantine'])
-            isdir = os.path.isdir(self._quarantine)
-
-        if not self._options['quarantine'] or (isdir and not os.access(self._quarantine, os.W_OK)):
-            self._archivers['extract'] = []
-            self._options['disabled'].append('extract')
-        elif self._options['quarantine'] and not isdir:
-            try:
-                self._mkdir(self._quarantine)
-            except os.error:
-                self._archivers['extract'] = []
-                self._options['disabled'].append('extract')
             
     #*********************************************************************#
     #*                  API TO BE IMPLEMENTED IN SUB-CLASSES             *#
@@ -357,7 +332,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         try:
             archive = archiver.open(name, "w")
             for file_ in files:
-                archive.add(file_)
+                archive.add(self._basename(file_))
             archive.close()
         except:
             raise Exception('Could not create archive')
@@ -392,7 +367,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         os.chdir(cwd)
 
-    def _findSymlinks(self, path):
+    def _find_symlinks(self, path):
         """
         Recursive symlinks search
         """
@@ -403,7 +378,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             for p in self._scandir(path):
                 if os.path.islink(p) or not self._name_accepted(self._basename(p)):
                     return True
-                elif os.path.isdir(p) and self._findSymlinks(p):
+                elif os.path.isdir(p) and self._find_symlinks(p):
                     return True
                 elif os.path.isfile(p):
                     self._archiveSize += os.path.getsize(p)
@@ -448,7 +423,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             self._archiveSize = 0;
             
             #find symlinks
-            symlinks = self._findSymlinks(dir_)
+            symlinks = self._find_symlinks(dir_)
             #remove arc copy
             self.remove(dir_)
             
