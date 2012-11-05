@@ -152,19 +152,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             if os.path.isdir(p) and not self._attr(p, 'hidden'):
                 return True
     
-    def _dimensions(self, path, mime):
+    def _dimensions(self, path):
         """
         Return object width and height
         Ususaly used for images, but can be realize for video etc...
         Can Raise a NotAnImageError
         """
-        if mime.startswith('image'):
-            try:
-                im = Image.open(path)
-                return '%sx%s' % im.size
-            except:
-                pass
-        raise NotAnImageError
+        try:
+            im = Image.open(path)
+            return '%sx%s' % im.size
+        except:
+            raise NotAnImageError
     
     #******************** file/dir content *********************#
 

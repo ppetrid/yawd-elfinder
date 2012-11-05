@@ -1024,7 +1024,13 @@ class ElfinderVolumeDriver(object):
         Return image dimensions.
         Raises FileNotFoundError or NotAnImageError.
         """
-        return self._dimensions(self.decode(hash_), self.file(hash_)['mime'])
+        stat = self.file(hash_)
+        
+        if 'dim' in stat:
+            return stat['dim']
+        
+        if stat['mime'].startswith('image'):
+            return self._dimensions(self.decode(hash_))
         
     #*********************************************************************#
     #*                               FS API                              *#
@@ -1137,6 +1143,8 @@ class ElfinderVolumeDriver(object):
                 else: #file
                     if not 'tmb' in stat and self._can_create_tmb(path, stat):
                         stat['tmb'] = self._get_tmb(stat['target'] if 'target' in stat else path, stat)
+                    if not 'dim' in stat and stat['mime'].startswith('image'):
+                        stat['dim'] = self._dimensions(path)
             
             if 'alias' in stat and stat['alias'] and 'target' in stat and stat['target']:
                 stat['thash'] = self.encode(stat['target'])
@@ -1448,6 +1456,7 @@ class ElfinderVolumeDriver(object):
                 raise NamedError(ElfinderErrorMessages.ERROR_RM, self._path(path))
 
         self._clear_cached_dir(path)
+        self._clear_cached_dir(self._dirname(path))
         self._removed.append(stat)
     
     #************************* thumbnails **************************#
@@ -1783,7 +1792,7 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-    def _dimensions(self, path, mime):
+    def _dimensions(self, path):
         """
         Return object width and height
         Ususaly used for images, but can be realize for video etc...

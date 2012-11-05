@@ -25,7 +25,7 @@ class ElfinderFile(object):
                     info = connector.execute('info', targets = [self.hash], options=True)['files'][0]
                         
                     #get image dimensions
-                    if 'mime' in info and info['mime'].startswith('image'):
+                    if not 'dim' in info and 'mime' in info and info['mime'].startswith('image'):
                         info['dim'] = connector.execute('dim', target=self.hash)['dim']
                         
                     #calculate thumbnail url
