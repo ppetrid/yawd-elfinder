@@ -464,6 +464,18 @@ viewing and deleting the directory), you could set this to::
    but are ignored if an :ref:`setting-accessControl` callable is set 
    and that callable returns ``True`` or ``False`` for defined properties 
    of the file.
+   
+.. _setting-quarantine:
+
+quarantine
+++++++++++++
+
+Default: ``'.quarantine'``
+
+A local folder used to temporarily extract files from an archive and check
+them for validity. This path is always created (if it does not already 
+exist) on the **local** filesystem. The `quarantine` option may also be used from some drivers 
+to temporarily store files when creating archives form a remote filesystem. 
 
 .. _setting-archiveMimes:
 
@@ -579,5 +591,5 @@ Volume-specific settings
 Each volume driver may define a set of extra configuration options,
 depending on its needs. For example, the 
 :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-supports `dirMode`, `fileMode` and `quarantine`.
+supports `dirMode` and `fileMode`.
  
