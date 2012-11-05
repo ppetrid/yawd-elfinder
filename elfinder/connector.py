@@ -1,5 +1,4 @@
 import os, re, time, urllib
-from django.conf import settings
 from django.utils.translation import ugettext as _
 from exceptions import ElfinderErrorMessages, VolumeNotFoundError, DirNotFoundError, FileNotFoundError, NamedError, NotAnImageError
 
@@ -74,10 +73,6 @@ class ElfinderConnector:
                 try:
                     volume.mount(o)
                 except Exception as e:
-                    #raise the exception in debug mode
-                    if settings.DEBUG:
-                        raise
-    
                     self._mountErrors.append('Driver "%s" " %s' % (class_, e))
                     break
                 
@@ -246,8 +241,6 @@ class ElfinderConnector:
             if init:
                 cwd = volume.dir(hash_=volume.default_path(), resolve_link=True)
             else:
-                if settings.DEBUG:
-                    raise
                 return {'error' : self.error(ElfinderErrorMessages.ERROR_OPEN, display_hash, e)}
 
         if not cwd['read']:
@@ -473,14 +466,12 @@ class ElfinderConnector:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
 
         try:
-            return { 'added' : volume.rename(target, name), 'removed' : volume.removed() }
+            return { 'added' : [volume.rename(target, name)], 'removed' : volume.removed() }
         except NamedError as e:
             return { 'error' : self.error(e, e.name, ElfinderErrorMessages.ERROR_RENAME) }
         except FileNotFoundError:
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, '#%s' % target, ElfinderErrorMessages.ERROR_FILE_NOT_FOUND) }
         except Exception as e:
-            if settings.DEBUG:
-                raise
             return { 'error' : self.error(ElfinderErrorMessages.ERROR_RENAME, e) }
 
     def _duplicate(self, targets, suffix='copy'):
@@ -601,8 +592,6 @@ class ElfinderConnector:
             except NamedError as e:
                 result['warning'] = self.error(e, e.name)
             except Exception as e:
-                if settings.DEBUG:
-                    raise
                 result['warning'] = self.error(e)
 
         return result
