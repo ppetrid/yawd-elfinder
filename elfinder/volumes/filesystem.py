@@ -352,7 +352,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         
         if os.path.isdir(path):
             for p in self._scandir(path):
-                if os.path.islink(p) or not self._name_accepted(self._basename(p)):
+                if os.path.islink(p):
                     return True
                 elif os.path.isdir(p) and self._find_symlinks(p):
                     return True
@@ -365,16 +365,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
     def _remove_unaccepted_files(self, path):
         """
-        Recursively delete unaccepted files based on their mimetype
-        and return files in the directory.
+        Recursively delete unaccepted files based on their mimetype or
+        accepted name and return files in the directory.
         """
         ls = []
         for p in self._scandir(path):
             mime = self.stat(p)['mime']
-            if not self.mime_accepted(mime):
+            if not self.mime_accepted(mime) or not self._name_accepted(self._basename(p)):
                 self.remove(p)
             elif mime != 'directory' or self._remove_unaccepted_files(p):
                 ls.append(p)
+            self._clear_cached_stat(p)
         return ls
 
     def _extract(self, path, archiver):
@@ -404,7 +405,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
             raise Exception(ElfinderErrorMessages.ERROR_ARC_SYMLINKS)
 
         #check max files size
-        if self._options['maxArchiveSize'] > 0 and self._options['maxArchiveSize'] < self._archiveSize:
+        if self._options['archiveMaxSize'] > 0 and self._options['archiveMaxSize'] < self._archiveSize:
             raise Exception(ElfinderErrorMessages.ERROR_ARC_MAXSIZE)
 
         #for several files - create new directory

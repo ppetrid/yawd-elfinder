@@ -132,7 +132,7 @@ class ElfinderVolumeDriver(object):
             #Manual config for archivers.
             'archivers' : {},
             #max allowed archive files size (0 - no limit)
-            'maxArchiveSize' : 0,
+            'archiveMaxSize' : 0,
             #seconds to cache the file and dir data used by the driver 
             'cache' : 600
         }
@@ -209,17 +209,19 @@ class ElfinderVolumeDriver(object):
         self._today = time.mktime(datetime.date.today().timetuple())
         self._yesterday = self._today-86400
         
-        #set uploadMaxSize  
-        try:
-            units = {
-                'k' : 1024,
-                'm' : 1048576,
-                'g' : 1073741824,
-                'b' : 1
-            }        
-            self._options['uploadMaxSize'] = int(self._options['uploadMaxSize'][:-1]) * units[self._options['uploadMaxSize'][-1].lower()]
-        except (TypeError, KeyError):
-            self._options['uploadMaxSize'] = 0
+        #set uploadMaxSize, archiveMaxSize
+        units = {
+            'k' : 1024,
+            'm' : 1048576,
+            'g' : 1073741824,
+            'b' : 1
+        }
+        for opt in ['uploadMaxSize', 'archiveMaxSize']:
+            if not isinstance(self._options[opt], int):
+                try:
+                    self._options[opt] = int(self._options[opt][:-1]) * units[self._options[opt][-1].lower()]
+                except (TypeError, KeyError):
+                    self._options[opt] = 0
         
         self._root_name = self._basename(self._root) if not self._options['alias'] else self._options['alias']
         

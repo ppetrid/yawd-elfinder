@@ -332,7 +332,7 @@ The order in which to proccess :ref:`setting-uploadAllow` and
 uploadMaxSize
 +++++++++++++
 
-Default: ``'0'``
+Default: ``0``
 
 The maximum upload file size. Set as number (bytes) or string ending 
 with the size unit (e.g. "10M", "500K", "1G")
@@ -542,15 +542,16 @@ like python's built-in :class:`tarfile.TarFile` class.
 For more information see `<http://docs.python.org/library/tarfile.html>`_ and
 view yawd-elfinder's :class:`elfinder.utils.archivers.ZipFileArchiver` source code.
 
-.. _setting-maxArchiveSize:
+.. _setting-archiveMaxSize:
 
-maxArchiveSize
+archiveMaxSize
 ++++++++++++++
 
 Default: ``0``
 
-The maximum allowed size of a new archive file. `0` means that there
-is no size restriction.
+The maximum allowed size of a new archive file. ` Set as number (bytes) 
+or string ending with the size unit (e.g. "10M", "500K", "1G"). `0`` means
+there is no size restriction.
 
 .. _setting-keepAlive:
 
@@ -577,8 +578,8 @@ in the cache. The higher the value, the less disk read operations are
 performed. Especially when it comes to remote volumes a higher value
 might be better. ``0`` seconds means that internal caching is disabled. 
 
-..note:: Although not recommended, there might be some cases where 
-you should lower the cache. If disk contents change constantly
+.. note:: There might be some cases where  you should lower the cache
+(although not recommended). If disk contents change constantly
 (i.e. from batch processes or 3rd party applications) you might
 find yawd-elfinder displaying the wrong data.For example if you manually
 delete a file from disk, it could theoretically take up to 10 minutes
