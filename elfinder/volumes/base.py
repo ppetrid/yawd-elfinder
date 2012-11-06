@@ -449,6 +449,7 @@ class ElfinderVolumeDriver(object):
         """
         Return dir files names list. Raises
         PermissionDeniedError, FileNotFoundError, DirNotFoundError
+        If onlyMimes is set return only acceptable dirs and files.
         """
         if not self.dir(hash_)['read']:
             raise PermissionDeniedError
@@ -1247,7 +1248,6 @@ class ElfinderVolumeDriver(object):
     def _get_scandir(self, path):
         """
         Return required directory files info.
-        If onlyMimes is set - return only dirs and files of required mimes
         """
 
         files = []
@@ -1432,7 +1432,7 @@ class ElfinderVolumeDriver(object):
             raise NamedError(ElfinderErrorMessages.ERROR_RM, self._path(path))
 
         stat['realpath'] = path
-        self._rm_tmb(stat)
+        self._rm_tmb(stat, False)
         
         if not force and self._is_locked(stat):
             raise NamedError(ElfinderErrorMessages.ERROR_LOCKED, self._path(path))
@@ -1562,18 +1562,19 @@ class ElfinderVolumeDriver(object):
         result = Image.composite(rotated, bg, rotated)
         self._saveimage(result, target, destformat if destformat else im.format)
 
-    def _rm_tmb(self, stat):
+    def _rm_tmb(self, stat, recursion=True):
         """
         Remove thumbnail, also remove recursively if stat is directory
         """
-        if stat['mime'] == 'directory':
+        if stat['mime'] == 'directory' and recursion:
             for p in self._get_cached_dir(self.decode(stat['hash'])):
                 self._rm_tmb(self.stat(p))
         elif 'tmb' in stat and stat['tmb'] != 1:
             tmb = self._join_path(self._options['tmbPath'], stat['tmb'])
             try:
+                self._clear_cached_dir(self._options['tmbPath'])
+                self._clear_stat(tmb)
                 self._unlink(tmb)
-                self._clear_cached_dir(self._dirname(tmb))
             except:
                 return
 
@@ -1624,6 +1625,28 @@ class ElfinderVolumeDriver(object):
                 #check if conf is class and implements open, extractall and close methods
                 if re.match(r'application/', mime) and inspect.isclass(conf) and hasattr(conf, 'open') and callable(getattr(conf, 'open')) and hasattr(conf, 'extractall') and callable(getattr(conf, 'extractall')) and hasattr(conf, 'close') and callable(getattr(conf, 'close')):
                     self._archivers['extract'][mime] = archiver
+                    
+    def _unpack(self, path, archiver):
+        """
+        Unpack archive
+        """
+        try:
+            archiver = archiver['archiver']
+        except KeyError:
+            raise Exception('Invalid archiver')
+
+        cwd = os.getcwd()
+        dir_ = os.path.dirname(path)
+        os.chdir(dir_)
+        
+        try:
+            archive = archiver.open(path)
+            archive.extractall()
+            archive.close()
+        except:
+            raise Exception('Could not create archive')
+
+        os.chdir(cwd)
                     
     #****************util methods ********************#
     

@@ -343,28 +343,6 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         return path
 
-    def _unpack(self, path, arc):
-        """
-        Unpack archive
-        """
-        try:
-            archiver = arc['archiver']
-        except KeyError:
-            raise Exception('Invalid archiver')
-
-        cwd = os.getcwd()
-        dir_ = self._dirname(path)
-        os.chdir(dir_)
-        
-        try:
-            archive = archiver.open(path)
-            archive.extractall()
-            archive.close()
-        except:
-            raise Exception('Could not create archive')
-
-        os.chdir(cwd)
-
     def _find_symlinks(self, path):
         """
         Recursive symlinks search
@@ -407,7 +385,6 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         archive_copy = self._join_path(quarantine_dir, archive_name)
         
         self._mkdir(quarantine_dir)
-        os.chmod(quarantine_dir, 0777)
 
         #copy archive file in quarantine
         self._copy(path, quarantine_dir, archive_name)
