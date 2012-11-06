@@ -4,8 +4,8 @@ Localization
 
 yawd-elfinder automatically detects the current locale using
 `Django's internationalization mechanism <https://docs.djangoproject.com/en/dev/topics/i18n/>`_.
-If a translation file is found, then it loads the file and displays elfinder
-in the current language.
+If an elfinder translation file is found, then it loads the file and displays
+elfinder in the current language.
 
 For a list of the available languages see :ref:`setting-ELFINDER_LANGUAGES`.
 
