@@ -1909,7 +1909,7 @@ class ElfinderVolumeDriver(object):
         """
         raise NotImplementedError
 
-    def _extract(self, path, arc):
+    def _extract(self, path, archiver):
         """
         Extract files from archive
         """

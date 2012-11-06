@@ -263,7 +263,8 @@ A list of the mime types to show for this root. The driver checks if
 the file mime type **starts** with values in this lists. Therefore, 
 to allow for displaying only images you can use ``['image',]`` and all
 files whose mime starts with ``'image'`` (e.g. `'image/png'`, `'image/jpg'` 
-etc) will be filtered out.
+etc) will be filtered out. This filter will also prevent unaccepted files
+from being **uploaded** as well as **extracted** from archive files. 
 
 .. _setting-uploadOverwrite:
 

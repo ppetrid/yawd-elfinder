@@ -385,79 +385,74 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         return False
 
-    def _extract(self, path, arc):
+    def _remove_unaccepted_files(self, path):
         """
-        Extract files from archive
+        Recursively delete unaccepted files based on their mimetype.
         """
-        
-        #TODO: Take mime filters into consideration
-        
-        basename = self._basename(path)
-        dirname = self._dirname(path)
+        for p in self._scandir(path):
+            mime = self.stat(p)['mime']
+            if not self.mime_accepted(mime):
+                self.remove(p)
+            elif mime == 'directory':
+                self._remove_unaccepted_files(p)
 
-        if self._quarantine:
-            dir_name = u'%s%s' % (str(time.time()).replace(' ', '_'), basename)
-            dir_ = self._join_path(self._quarantine, dir_name)
-            archive = self._join_path(dir_, basename)
-            
-            self._mkdir(dir_)
-            os.chmod(dir_, 0777)
-
-            #copy in quarantine
-            self._copy(path, dir_, basename)
-            
-            #extract in quarantine
-            self._unpack(archive, arc)
-            self._unlink(archive)
-            
-            #get files list
-            ls = self._scandir(dir_)
-            
-            #no files - extract error ?
-            if not ls:
-                self.remove(dir_)
-                return
-            
-            self._archiveSize = 0;
-            
-            #find symlinks
-            symlinks = self._find_symlinks(dir_)
-            #remove arc copy
-            self.remove(dir_)
-            
-            if symlinks:
-                raise Exception(ElfinderErrorMessages.ERROR_ARC_SYMLINKS)
-
-            #check max files size
-            if self._options['maxArchiveSize'] > 0 and self._options['maxArchiveSize'] < self._archiveSize:
-                raise Exception(ElfinderErrorMessages.ERROR_ARC_MAXSIZE)
-
-            #archive contains one item - extract in archive dir
-            if len(ls) == 1:
-                self._unpack(path, arc)
-                result = u'%s%s%s' % (dirname, self._separator, self._basename(ls[0]))
-            else:
-                #for several files - create new directory
-                #create unique name for directory
-                name = basename
-                m =re.search('/\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$/i', name) 
-                if m and m.group(0):
-                    name = name[0:(len(name)-len(m.group(0)))]
-
-                test = self._join_path(dirname, name)
-                if os.path.exists(test) or os.path.islink(test):
-                    name = self._unique_name(dirname, name, '-', False)
+    def _extract(self, path, archiver):
+        """
+        Extract files from archive.
+        """
                 
-                result  = self._join_path(dirname, name)
-                archive = self._join_path(result, basename)
+        archive_name = self._basename(path)
+        archive_dir = self._dirname(path)
+        quarantine_dir = self._join_path(self._quarantine, u'%s%s' % (str(time.time()).replace(' ', '_'), archive_name))
+        archive_copy = self._join_path(quarantine_dir, archive_name)
+        
+        self._mkdir(quarantine_dir)
+        os.chmod(quarantine_dir, 0777)
 
-                self._mkdir(result)
-                self._copy(path, result, basename)
-                
-                self._unpack(archive, arc)
-                self._unlink(archive)
+        #copy archive file in quarantine
+        self._copy(path, quarantine_dir, archive_name)
+        
+        #extract in quarantine
+        self._unpack(archive_copy, archiver)
+        self._unlink(archive_copy)
+        
+        self._remove_unaccepted_files(quarantine_dir)    
+        
+        ls = self._scandir(quarantine_dir)
+        self._archiveSize = 0;
+        
+        #find symlinks            
+        if self._find_symlinks(quarantine_dir):
+            raise Exception(ElfinderErrorMessages.ERROR_ARC_SYMLINKS)
 
-            if not os.path.exists(result):
-                raise Exception('Could not extract archive')
-            
-            return result
+        #check max files size
+        if self._options['maxArchiveSize'] > 0 and self._options['maxArchiveSize'] < self._archiveSize:
+            raise Exception(ElfinderErrorMessages.ERROR_ARC_MAXSIZE)
+
+        #archive contains one item - extract in archive dir
+        if len(ls) == 1:
+            self._move(ls[0], archive_dir, self._basename(ls[0]))
+            os.rmdir(quarantine_dir)
+            result = self._join_path(archive_dir, self._basename(ls[0]))
+        elif len(ls) > 1:
+            #for several files - create new directory
+            #create unique name for directory
+            name = archive_name
+            m =re.search('/\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$/i', name) 
+            if m and m.group(0):
+                name = name[0:(len(name)-len(m.group(0)))]
+
+            test = self._join_path(archive_dir, name)
+            if os.path.exists(test) or os.path.islink(test):
+                name = self._unique_name(archive_dir, name, '-', False)
+
+            self._move(quarantine_dir, archive_dir, name)
+            result  = self._join_path(archive_dir, name)
+        else:
+            os.rmdir(quarantine_dir)
+            raise Exception('No valid files in archive')
+        
+        if not os.path.exists(result):
+            raise Exception('Could not extract archive')
+        
+        return result
