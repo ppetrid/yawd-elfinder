@@ -1640,7 +1640,7 @@ class ElfinderVolumeDriver(object):
         os.chdir(dir_)
         
         try:
-            archive = archiver.open(path)
+            archive = archiver.open(os.path.basename(path))
             archive.extractall()
             archive.close()
         except:

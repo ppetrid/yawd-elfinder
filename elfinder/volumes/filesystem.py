@@ -365,14 +365,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
     def _remove_unaccepted_files(self, path):
         """
-        Recursively delete unaccepted files based on their mimetype.
+        Recursively delete unaccepted files based on their mimetype
+        and return files in the directory.
         """
+        ls = []
         for p in self._scandir(path):
             mime = self.stat(p)['mime']
             if not self.mime_accepted(mime):
                 self.remove(p)
-            elif mime == 'directory':
-                self._remove_unaccepted_files(p)
+            elif mime != 'directory' or self._remove_unaccepted_files(p):
+                ls.append(p)
+        return ls
 
     def _extract(self, path, archiver):
         """
@@ -393,10 +396,8 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         self._unpack(archive_copy, archiver)
         self._unlink(archive_copy)
         
-        self._remove_unaccepted_files(quarantine_dir)    
-        
-        ls = self._scandir(quarantine_dir)
-        self._archiveSize = 0;
+        ls = self._remove_unaccepted_files(quarantine_dir)
+        self._archiveSize = 0
         
         #find symlinks            
         if self._find_symlinks(quarantine_dir):
@@ -406,22 +407,17 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         if self._options['maxArchiveSize'] > 0 and self._options['maxArchiveSize'] < self._archiveSize:
             raise Exception(ElfinderErrorMessages.ERROR_ARC_MAXSIZE)
 
-        #archive contains one item - extract in archive dir
-        if len(ls) == 1:
-            self._move(ls[0], archive_dir, self._basename(ls[0]))
-            os.rmdir(quarantine_dir)
-            result = self._join_path(archive_dir, self._basename(ls[0]))
-        elif len(ls) > 1:
-            #for several files - create new directory
-            #create unique name for directory
+        #for several files - create new directory
+        #create unique name for directory
+        if len(ls) >= 1:    
             name = archive_name
-            m =re.search('/\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$/i', name) 
+            m =re.search(r'\.((tar\.(gz|bz|bz2|z|lzo))|cpio\.gz|ps\.gz|xcf\.(gz|bz2)|[a-z0-9]{1,4})$', name, re.IGNORECASE) 
             if m and m.group(0):
-                name = name[0:(len(name)-len(m.group(0)))]
+                name = name[0:len(name)-len(m.group(0))]
 
             test = self._join_path(archive_dir, name)
             if os.path.exists(test) or os.path.islink(test):
-                name = self._unique_name(archive_dir, name, '-', False)
+                name = self._unique_name(archive_dir, name, ' extracted', False)
 
             self._move(quarantine_dir, archive_dir, name)
             result  = self._join_path(archive_dir, name)
