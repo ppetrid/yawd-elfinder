@@ -1553,8 +1553,8 @@ window.elFinder = function(node, opts) {
 		})
 		.bind('rm', function(e) {
 			var play  = beeper.canPlayType && beeper.canPlayType('audio/wav; codecs="1"');
-		
-			play && play != '' && play != 'no' && $(beeper).html('<source src="./sounds/rm.wav" type="audio/wav">')[0].play()
+			
+			play && play != '' && play != 'no' && $(beeper).html('<source src="'+self.options.rmSoundUrl+'" type="audio/wav">')[0].play()
 		})
 		
 		;
@@ -3356,6 +3356,13 @@ elFinder.prototype._options = {
 		path    : '/',
 		secure  : false
 	},
+	
+	/**
+	 * url to the rm sound file
+	 *
+	 * @type String
+	 */
+	rmSoundUrl: './sounds/rm.wav',
 	
 	/**
 	 * Contextmenu config

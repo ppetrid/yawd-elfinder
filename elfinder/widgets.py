@@ -1,9 +1,9 @@
 from django import forms
-from django.utils.translation import ugettext as _
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import simplejson as json
 from django.utils.safestring import mark_safe
-from django.utils.translation import to_locale, get_language
+from django.utils.translation import to_locale, get_language, ugettext as _
 from fields import ElfinderFile
 from conf import settings as ls
 
@@ -53,8 +53,11 @@ class ElfinderWidget(forms.HiddenInput):
                     self.optionset, 
                     'default' if self.start_path is None else self.start_path
                 ]),
-            'rememberLastDir' : True if not self.start_path else False
+            'rememberLastDir' : True if not self.start_path else False,
         })
+        
+        if not 'rmSoundUrl' in self.options:
+            self.options['rmSoundUrl'] = '%selfinder/sounds/rm.wav' % settings.STATIC_URL
         
         #update the elfinder client language
         if not self.current_locale.startswith('en') and self.current_locale in ls.ELFINDER_LANGUAGES:

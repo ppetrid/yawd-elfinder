@@ -81,7 +81,7 @@
 	}
 	
 	/*
-	 * Create the html structure and wrap the hidden input input
+	 * Create the html structure and wrap the hidden input
 	 */
 	ElfinderWidget.prototype.init = function() {
 		
@@ -142,6 +142,9 @@
 		this.pr.empty().append(header, table);
 	}
 	
+	/*
+	 * Initialize the widget's set/update and clear buttons
+	 */
 	ElfinderWidget.prototype.buttons = function () {
 		
 		var elf = this.elfinder;
