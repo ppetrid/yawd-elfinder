@@ -23,7 +23,7 @@ class ElfinderFile(object):
 
                     connector = ElfinderConnector(ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset])
                     info = connector.execute('info', targets = [self.hash], options=True)['files'][0]
-                        
+                    
                     #get image dimensions
                     if not 'dim' in info and 'mime' in info and info['mime'].startswith('image'):
                         info['dim'] = connector.execute('dim', target=self.hash)['dim']
@@ -32,11 +32,6 @@ class ElfinderFile(object):
                     if 'tmb' in info and 'tmbUrl' in info:
                         info['tmb'] = '%s%s' % (info['tmbUrl'], info['tmb'])
                         del info['tmbUrl']
-                            
-                    #`url` key is the equivelant `rootUrl` of the elfinderwidget
-                    if 'url' in info: 
-                        info['rootUrl'] = info['url']
-                        del info['url']
                         
                     if 'archivers' in info:
                         del info['archivers']
@@ -57,7 +52,7 @@ class ElfinderFile(object):
         Get the file url
         """
         info = self._get_info()
-        return '%s%s' % (info['rootUrl'], '/'.join(info['path'].split(info['separator'])[1:])) if info else ''
+        return info['url']
     
     @property
     def info(self):
