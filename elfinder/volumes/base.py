@@ -15,7 +15,7 @@ class ElfinderVolumeDriver(object):
     """
     
     #The driver id.
-    #Must started with a letter and contain only [a-z0-9]
+    #Must start with a letter and contain only [a-z0-9]
     #Used as part of volume id
     _driver_id = 'a'
     
