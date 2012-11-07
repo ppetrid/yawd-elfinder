@@ -7,6 +7,7 @@ Django settings
 Below is a list of settings defined by yawd-elfinder. 
 
 .. note::
+
    You can override all of them in your project's settings file.
    
 .. _setting-ELFINDER_JS_URLS:
@@ -88,9 +89,7 @@ Each *optionset* can define one of the following keys:
 
 * ``debug``: indicates if we're on debug mode: ``True`` or ``False``
  
-* ``roots``: a list of root directories that elfinder will load on its
- instantiation. For example, the following will load both `pdfs` and `docs`
- directories::
+* ``roots``: a list of root directories that elfinder will load on its instantiation. For example, the following will load both `pdfs` and `docs` directories::
             
       ELFINDER_CONNECTOR_OPTION_SETS = {
          'myoptionset' : {
@@ -101,8 +100,10 @@ Each *optionset* can define one of the following keys:
             ]
          }
       }
-      
-Each root can define one of the following keys:
+
+.. important::
+
+	**Each root** can define one of the following keys:
 
 .. _setting-id:
 
@@ -161,10 +162,10 @@ URL
 
 Default: ``''``
 
-The URL corresponding to the root directory (e.g. ``'http://example.com/files/'``.
+The URL corresponding to the root directory (e.g. ``'http://example.com/files/'``).
 Each driver may provide a different default value or require it. For example,
 the :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-sets this to  the ``MEDIA_URL``setting by default.
+sets this to  the ``MEDIA_URL`` setting by default.
 
 .. _setting-treeDeep:
 
@@ -338,7 +339,8 @@ The maximum upload file size. Set as number (bytes) or string ending
 with the size unit (e.g. "10M", "500K", "1G")
 
 .. note::
-   this corresponds to each uploaded file. It is a hard limit.
+
+   This corresponds to each uploaded file. It is a hard limit.
  
 .. _setting-checkSubFolders:
 
@@ -533,11 +535,11 @@ If you need additional archivers use this setting as follows::
 
 Create archiver classes (e.g. ``MyJarArchiver`` in the above example) 
 must implement the open, add and close methods according to 
-Python's built-in :class:`tarfile.TarFile` class.
+Python's built-in :py:class:`tarfile.TarFile` class.
 
 Extract/read archiver classes (e.g. ``MyJarReader`` in the above example) 
 must implement the open, extractall and close methods and operate 
-like python's built-in :class:`tarfile.TarFile` class.
+like python's built-in :py:class:`tarfile.TarFile` class.
 
 For more information see `<http://docs.python.org/library/tarfile.html>`_ and
 view yawd-elfinder's :class:`elfinder.utils.archivers.ZipFileArchiver` source code.
@@ -549,8 +551,8 @@ archiveMaxSize
 
 Default: ``0``
 
-The maximum allowed size of a new archive file. ` Set as number (bytes) 
-or string ending with the size unit (e.g. "10M", "500K", "1G"). `0`` means
+The maximum allowed size of a new archive file. Set as number (bytes) 
+or string ending with the size unit (e.g. "10M", "500K", "1G"). ``0`` means
 there is no size restriction.
 
 .. _setting-keepAlive:
@@ -578,20 +580,131 @@ in the cache. The higher the value, the less disk read operations are
 performed. Especially when it comes to remote volumes a higher value
 might be better. ``0`` seconds means that internal caching is disabled. 
 
-.. note:: There might be some cases where  you should lower the cache
-(although not recommended). If disk contents change constantly
-(i.e. from batch processes or 3rd party applications) you might
-find yawd-elfinder displaying the wrong data.For example if you manually
-delete a file from disk, it could theoretically take up to 10 minutes
-for yawd-elfinder to notice with the default value. However in typical
-set-ups this is not an issue.
-
-************************
-Volume-specific settings
-************************
-
-Each volume driver may define a set of extra configuration options,
-depending on its needs. For example, the 
-:class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-supports `dirMode` and `fileMode`.
+.. note::
  
+	There might be some cases where  you should lower the cache
+	(although not recommended). If disk contents change constantly
+	(i.e. from batch processes or 3rd party applications) you might
+	find yawd-elfinder displaying the wrong data.For example if you manually
+	delete a file from disk, it could theoretically take up to 10 minutes
+	for yawd-elfinder to notice with the default value. However in typical
+	set-ups this is not an issue.
+
+*******************************
+Volume-specific django settings
+*******************************
+
+Each volume driver defines a set of extra `root-wise` configuration
+options, depending on its needs.
+
+ElfinderVolumeLocalFileSystem additional settings
+------------------------------------------------
+
+The :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
+driver defines two extra options:
+ 
+.. _setting-dirMode:
+
+dirMode
++++++++
+
+Default: ``0755``
+
+The default mode of new directories created with elFinder when using this
+root (octal value).
+
+.. _setting-fileMode:
+
+fileMode
+++++++++
+
+Default: ``0644``
+
+The default mode of new files created with elFinser when using this 
+root (octal value).
+
+ElfinderVolumeStorage additional settings
+-----------------------------------------
+
+The :class:`elfinder.volumes.storage.ElfinderVolumeStorage`
+driver defines some extra configuration options as well:
+
+.. _setting-storage:
+
+storage
++++++++
+
+Default ``None``
+
+For ElfinderVolumeStorage to work we must set the Django filesystem storage
+it will use. This setting should be set to a storage instance.
+
+.. _setting-storageClass:
+
+storageClass
+++++++++++++
+
+Default ``None``
+
+In some cases we may not be able to instantiate a storage directly in the
+project main settings module. As an alternative method of providing the
+storage instance, :ref:`setting-storageClass` can be used to set the 
+class and :ref:`setting-storageKwArgs` the keyword arguments that the driver
+will use to create a new storage instance. This setting can be a class
+(e.g. `FileSystemStorage`) or a string containing a fully qualified
+path to a python class (e.g. `'django.core.files.storage.FileSystemStorage'`).
+If both :ref:`setting-storage` and :ref:`setting-storageClass` are not set, 
+the driver will create a new 
+:class:`django.core.files.storage.FileSystemStorage` instance managing your
+``MEDIA_ROOT`` directory and ignoring the :ref:`setting-storageKwArgs`
+setting.
+
+.. note::
+
+	:ref:`setting-storage` has a higher priority over :ref:`setting-storageClass`.
+
+.. _setting-storageKwArgs:
+ 
+storageKwArgs
++++++++++++++
+
+Default ``{}``
+
+The keyword arguments to use upon storage instantiation. Use this along with
+the :ref:`setting-storageClass` setting. 
+
+For example, the two roots in the following configuration are the same::
+
+	ELFINDER_CONNECTOR_OPTION_SETS = {
+	    'myoptionset' : {
+	        'roots' : [{
+	            'id' : 'lr',
+	            'driver' : ElfinderVolumeStorage,
+	            'storageClass' : 'django.core.files.storage.FileSystemStorage',
+	            'storageKwArgs' : {
+		            'location' : settings.MEDIA_ROOT,
+		            'base_url' : settings.MEDIA_URL
+	            }
+	        },{
+	            'id' : 'lr2',
+	            'driver' : ElfinderVolumeStorage,
+	            'storage' : FileSystemStorage()
+	        }]
+	    }
+	}
+	
+.. _setting-rmDir:
+
+rmDir
++++++
+
+Default: ``None``
+
+Filesystem storages do not provide a way for removing directories.
+You can use this setting to point to a callable that will handle directory
+removal for the current storage. The callable must accept two arguments:
+``path`` and ``storage``, the first being the path to delete and the latter
+the storage instance to use. When this is not set, yawd-elfinder behaves as
+follows: If the storage is an instance of
+:class:django.core.files.storage.FileSystemStorage it will use a
+built-in callable. If it's not it will disable the rmDir functionality.

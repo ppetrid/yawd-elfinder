@@ -1,5 +1,5 @@
 ******************
-elfinder connector
+ElfinderConnector
 ******************
 
 .. automodule:: elfinder.connector

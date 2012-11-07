@@ -1,8 +1,8 @@
 *******************
-Using yawd-elfinder
+Quick-start guide: Using yawd-elfinder
 *******************
 
-Before reading this guide, make sure yawd-elfinder is 
+Before reading this quick-start guide make sure yawd-elfinder is 
 :ref:`installed <install>` and :ref:`configured <config>`.
 
 The ElfinderFile model field
@@ -10,9 +10,9 @@ The ElfinderFile model field
 
 You should start by defining model fields that refer to files 
 managed by elfinder. For example, to define an image field for a simple
-article model
+article model:
 
-.. code-block:: django
+.. code-block:: python
 
    from django.db import models
    from elfinder.fields import ElfinderField 
@@ -48,8 +48,8 @@ When using
 ``MEDIA_ROOT``, and allow inly image files to be uploaded and managed.
 
 Of course, you can define your own *optionsets*. For more information on 
-how to do this, view the :ref:`setting-ELFINDER_CONNECTOR_OPTION_SETS` 
-setting documentation.
+how to do this, view the :ref:`example-dropbox` below and visit the
+:ref:`setting-ELFINDER_CONNECTOR_OPTION_SETS` setting documentation.
 
 :class:`elfinder.fields.ElfinderFile` can also accept a ``start_path`` argument
 to indicate the default folder to open for this field. For example, to open
@@ -69,24 +69,19 @@ Django templates
 ================
 
 Based on the above ``SimpleArticle`` example, if ``object`` is a 
-``SimpleArticle`` model instance, use the `url` 
-:class:`elfinder.fields.ElfinderFile` property to retrieve the image url
+``SimpleArticle`` model instance, use the 
+:class:`elfinder.fields.ElfinderFile` ``url`` property to retrieve the 
+image url:
 
 .. code-block:: django
    
    <img src="{{object.image.url}}" alt="{{object.name}}" />
 
-Volume Drivers
-==============
+Further reading
+===============
 
-yawd-elfinder currently handles files stored in the local file system. In 
-future releases a driver using the Django :class:`Storage` API 
-will be implemented, allowing for connecting to remote filesystems 
-(FTP etc). Another idea might be to implement a driver that stores files 
-exclusively in the database 
-(like `django-elfinder <https://github.com/mikery/django-elfinder>`_ does). 
+You can read some additional  yawd-elfinder articles on the 
+`yawd blog <http://blog.yawd.eu/tag/yawd-elfinder/>`_:
 
-Ofcourse you can always implement your own driver (that should extend 
-:class:`elfinder.volumes.base.ElfinderVolumeDriver`) and use the 
-:ref:`setting-ELFINDER_CONNECTOR_OPTION_SETS` setting to define a ``root`` 
-that uses your driver.
+* `Managing files with django - a yawd-elfinder tutorial <http://blog.yawd.eu/2012/managing-files-with-django-yawd-elfinder-tutorial/>`_
+

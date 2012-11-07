@@ -7,7 +7,8 @@ from base import ElfinderVolumeDriver
 
 class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
     """
-    elFinder driver for local filesystem.
+    elFinder driver for local filesystem. It implements the
+    :class:`elfinder.volumes.base.ElfinderVolumeDriver` API.
     """
     
     _driver_id = 'l'
@@ -63,13 +64,13 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
     def _dirname(self, path):
         """
-        Return parent directory path
+        Return parent directory path. See :func:`elfinder.volumes.base.ElfinderVolumeDriver._dirname`.
         """
         return os.path.dirname(path)
 
     def _basename(self, path):
         """
-        Return file name
+        Return file name. See :func:`elfinder.volumes.base.ElfinderVolumeDriver._basename`.
         """
         return os.path.basename(path)
 
@@ -77,13 +78,15 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Join two paths and return full path. If the latter path is
         absolute, return it.
+        
+        See :func:`elfinder.volumes.base.ElfinderVolumeDriver._join_path`.
         """
         
         return os.path.join(path1, path2)
     
     def _normpath(self, path):
         """
-        Return normalized path.
+        Return normalized path. See :func:`elfinder.volumes.base.ElfinderVolumeDriver._normpath`.
         """
         return os.path.normpath(path)
     
@@ -104,17 +107,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
     def _stat(self, path):
         """
-        Return stat for given path.
-        Stat contains following fields:
-        - (int)    size    file size in b. required
-        - (int)    ts      file modification time in unix time. required
-        - (string) mime    mimetype. required for folders, others - optionally
-        - (bool)   read    read permissions. required
-        - (bool)   write   write permissions. required
-        - (string) alias   for symlinks - link target path relative to root path. optionally
-        - (string) target  for symlinks - link target path. optionally
-        
-        Must raise an os.error on fail
+        Return stat for given path. See :func:`elfinder.volumes.base.ElfinderVolumeDriver._stat`.
         """
         stat = {}
 

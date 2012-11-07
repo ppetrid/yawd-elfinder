@@ -21,7 +21,8 @@ This is the easiest, one-step installation process::
 From source
 +++++++++++ 
 
-Alternatively, you can install yawd-elfinder from the source code (visit the github page `here <https://github.com/yawd/yawd-elfinder>`_).::
+Alternatively, you can install yawd-elfinder from the source code 
+(visit the github page `here <https://github.com/yawd/yawd-elfinder>`_)::
 
    git clone https://github.com/yawd/yawd-elfinder
    cd yawd-elfinder

@@ -8,4 +8,5 @@ Reference
    settings
    fields
    connector
+   drivers
    utils
