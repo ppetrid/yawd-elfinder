@@ -48,10 +48,10 @@ class ElfinderFile(object):
     @property
     def url(self):
         """
-        Get the file url
+        Get the file url.
         """
         info = self._get_info()
-        return info['url']
+        return info['url'] if 'url' in info else ''
     
     @property
     def info(self):
