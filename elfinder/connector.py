@@ -1,6 +1,7 @@
 import os, re, time, urllib
 from django.utils.translation import ugettext as _
 from exceptions import ElfinderErrorMessages, VolumeNotFoundError, DirNotFoundError, FileNotFoundError, NamedError, NotAnImageError
+from utils.volumes import instantiate_driver
 
 class ElfinderConnector:
     """
@@ -59,26 +60,11 @@ class ElfinderConnector:
 
         for o in opts['roots']:
 
-            class_ = o['driver'] if 'driver' in o else ''
-            
-            if 'driverInstance' in o and isinstance(o['driverInstance'], class_):
-                volume = o['driverInstance']
-            else:
-                try:
-                    volume = class_()
-                except TypeError:
-                    self._mountErrors.append('Driver "%s" does not exist' % class_)
-                    continue
-    
-                try:
-                    volume.mount(o)
-                except Exception as e:
-                    self._mountErrors.append('Driver "%s" " %s' % (class_, e))
-                    break
-                
-                #store driver instance in memory, if the 'keepAlive' option is set
-                if 'keepAlive' in o and o['keepAlive']:
-                    o['driverInstance'] = volume
+            try:
+                volume = instantiate_driver(o)
+            except Exception as e:
+                self._mountErrors.append(e.__unicode__())
+                continue
 
             id_ = volume.id()
             self._volumes[id_] = volume

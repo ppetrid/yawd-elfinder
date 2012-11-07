@@ -1,6 +1,7 @@
 from django.db import models
 from django.forms import CharField
-from connector import ElfinderConnector
+from django.utils.translation import ugettext as _
+from utils.volumes import get_path_driver
 
 class ElfinderFile(object):
     """
@@ -18,15 +19,14 @@ class ElfinderFile(object):
             if not self.hash:
                 self._info = {}
             else:
-                try:
-                    from conf import settings as ls
-
-                    connector = ElfinderConnector(ls.ELFINDER_CONNECTOR_OPTION_SETS[self.optionset])
-                    info = connector.execute('info', targets = [self.hash], options=True)['files'][0]
+                driver = get_path_driver(self.hash, self.optionset)
+                if driver:
+                    info = driver.options(self.hash)
+                    info.update(driver.file(self.hash))
                     
                     #get image dimensions
                     if not 'dim' in info and 'mime' in info and info['mime'].startswith('image'):
-                        info['dim'] = connector.execute('dim', target=self.hash)['dim']
+                        info['dim'] = driver.dimensions(self.hash)
                         
                     #calculate thumbnail url
                     if 'tmb' in info and 'tmbUrl' in info:
@@ -38,10 +38,9 @@ class ElfinderFile(object):
                         
                     if 'extract' in info:
                         del info['extract']
-    
+                    
                     self._info = info
-                except:
-                    from django.utils.translation import ugettext as _
+                else:
                     self._info = { 'error' : _('This file is no longer valid') }  
 
         return self._info

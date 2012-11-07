@@ -2,6 +2,12 @@
 Utility classes & functions
 ***************************
 
+Volume driver utils
+=================== 
+
+.. automodule:: elfinder.utils.volumes
+   :members:
+   
 Access control
 ==============
 
