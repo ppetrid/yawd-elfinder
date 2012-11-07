@@ -352,6 +352,7 @@ class ElfinderVolumeDriver(object):
         
             :path:    the path to the root as it will be displayed to the end user
             :url:    the url of file provided in the ``hash_`` argument
+            :rootUrl:    the root volume url
             :tmbUrl:    the root thumbnail url
             :disabled:    a list of the disabled commands
             :separator:    the path separator for this volume
@@ -363,6 +364,7 @@ class ElfinderVolumeDriver(object):
         return {
             'path' : self._path(self.decode(hash_)),
             'url' : '%s%s' % (self._options['URL'], self._relpath(path).replace(self._options['separator'], '/')),
+            'rootUrl' : self._options['URL'],
             'tmbUrl' : self._options['tmbURL'],
             'disabled' : self._options['disabled'],
             'separator' : self._separator,
@@ -1603,7 +1605,7 @@ class ElfinderVolumeDriver(object):
             tmb = self._join_path(self._options['tmbPath'], stat['tmb'])
             try:
                 self._clear_cached_dir(self._options['tmbPath'])
-                self._clear_stat(tmb)
+                self._clear_cached_stat(tmb)
                 self._unlink(tmb)
             except:
                 return
