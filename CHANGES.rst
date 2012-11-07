@@ -1,3 +1,16 @@
+.. changelog_
+
+Changelog
++++++++++
+
+v.0.90.00, 2012.11.07
+====================
+
+* Implemented a new storage driver
+* Driver refactoring for better performance
+* Various bug fixes 
+* Better documentation
+
 v.0.80.16, 2012.09.27
 =====================
 

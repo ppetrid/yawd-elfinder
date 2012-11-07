@@ -1,7 +1,7 @@
 yawd-elfinder, a file management solution for Django
 ====================================================
 
-`elFinder`_ is a jQuery file manager providing standard features -such as 
+`elFinder`_ is a jQuery web file manager providing standard features -such as 
 uploading, moving, renaming files etc-, as well as a set of advanced features
 such as image resizing/cropping/rotation and archive file creation.
 
@@ -11,11 +11,22 @@ is also provided. Therefore, you can easily manage your files
 through the Django admin interface, assign them to model fields and access
 the file URLs in your Django templates.
 
-The implementation follows the original PHP connector logic; you have full 
-control over the allowed mime types, hidding/locking specific folders etc. 
-In future release we plan to implement an FTP volume driver.
+**yawd-elfinder** can manage local files but also use Django filesystem storages to
+connect to remote filesystems. A set of django options allows control over
+file and directory permissions, accepted mime types, max file sizes etc. 
+
+The current version is 0.90.00, use the github version for the latest fixes.
+
+:ref:`changelog`
 
 .. _elfinder: http://elfinder.org
+
+Usage and demo
+==============
+
+See the yawd-elfinder documentation for information on 
+`how to install the demo <http://yawd-elfinder.readthedocs.org/en/latest/installation.html#example-project>`_
+and `use yawd-elfinder <http://yawd-elfinder.readthedocs.org/en/latest/usage.html>`_.
 
 Screenshots
 ===========
@@ -26,11 +37,4 @@ The admin widget
 
 Elfinder in action
 
-.. image:: http://static.yawd.eu/www/yawd-elfinder-rotate.jpg
-
-Usage and demo
-==============
-
-See the yawd-elfinder documentation for information on 
-`how to install the demo <http://yawd-elfinder.readthedocs.org/en/latest/installation.html#example-project>`_
-and `use yawd-elfinder <http://yawd-elfinder.readthedocs.org/en/latest/usage.html>`_. 
+.. image:: http://static.yawd.eu/www/yawd-elfinder-rotate.jpg 
