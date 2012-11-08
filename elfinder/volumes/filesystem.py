@@ -2,7 +2,7 @@ import os, re, time, shutil, magic
 from hashlib import md5
 from PIL import Image
 from django.conf import settings
-from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError
+from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError, DirNotFoundError
 from base import ElfinderVolumeDriver
 
 class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
@@ -39,6 +39,13 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
 
         if not 'path' in opts or not opts['path']:
             self._options['path'] = settings.MEDIA_ROOT
+        
+        #attempt to create root if it does not exist
+        if not os.path.exists(opts['path']):
+            try:
+                os.makedirs(opts['path'])
+            except:
+                raise DirNotFoundError
             
         if not 'URL' in opts or not opts['URL']:
             self._options['URL'] = settings.MEDIA_URL
