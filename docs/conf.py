@@ -48,7 +48,7 @@ copyright = u'2012, yawd'
 # built documents.
 #
 # The short X.Y version.
-version = '0.90.00'
+version = '0.90'
 # The full version, including alpha/beta/rc tags.
 release = '0.90.00'
 
