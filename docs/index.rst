@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the yawd-elfinder documentation!
-=======================================
+yawd-elfinder django application documentation
+==============================================
 
 `elFinder`_ is a jQuery web file manager providing standard features -such as 
 uploading, moving, renaming files etc-, as well as a set of advanced features
