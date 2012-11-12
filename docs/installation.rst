@@ -10,6 +10,12 @@ Installation
 You can install yawd-elfinder either by using the python package index or 
 the source code.
 
+.. note::
+
+	Since yawd-elfinder is being actively developed, for the time being you should
+	better use the source code installation method to ensure that all latest bug fixes 
+	and patches are included.  
+
 Python package
 ++++++++++++++
 

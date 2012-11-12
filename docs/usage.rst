@@ -45,7 +45,7 @@ When using
    my_field = ElfinderField(optionset='image')
 
 ...yawd-elfinder will store uploaded files to an `'images'` directory under your 
-``MEDIA_ROOT``, and allow inly image files to be uploaded and managed.
+``MEDIA_ROOT``, and allow only image files to be uploaded and managed.
 
 Of course, you can define your own *optionsets*. For more information on 
 how to do this, view the :ref:`example-dropbox` below and visit the
@@ -59,7 +59,7 @@ a folder named *'languages'* you could use the following code:
 
    my_field = ElfinderField(optionset='image', start_path='languages')
    
-yawd-elfinder expects that the path defined in ``star_path`` is *relative to
+yawd-elfinder expects that the path defined in ``start_path`` is *relative to
 the volume root* (see the :ref:`setting-path` setting). In fact, 
 ``start_path`` sets the  :ref:`setting-startPath` setting to the
 provided value.
@@ -76,6 +76,32 @@ image url:
 .. code-block:: django
    
    <img src="{{object.image.url}}" alt="{{object.name}}" />
+   
+You can directly check if an :class:`elfinder.fields.ElfinderField` of your model
+is empty:
+
+.. code-block:: django
+	{% if object.image %}..print the image..{% endif %}
+
+However, to see if an instantiated :class:`elfinder.fields.ElfinderFile` object 
+is empty, you can check the `hash` attribute (let's assume a context variable
+``elfinderfile`` holds the `ElfinderFile`):
+
+.. code-block:: django
+
+	{% if elfinderfile.hash %}..print the file..{% endif %}
+	
+...or check the `url attribute`
+
+.. code-block:: django
+
+	{% if elfinderfile.url %}..print the file..{% endif %}
+
+The above two will both work and perform the same, the only difference being that 
+the first will return an empty string, where the latter will return an empty dictionary. 
+In real-world scenarios you will never need to check against an instantiated empty
+`ElfinderFile`, since :class:`elfinder.fields.ElfinderField` will return ``None`` 
+if the field is empty.
 
 Further reading
 ===============
@@ -84,4 +110,4 @@ You can read some additional  yawd-elfinder articles on the
 `yawd blog <http://blog.yawd.eu/tag/yawd-elfinder/>`_:
 
 * `Managing files with django - a yawd-elfinder tutorial <http://blog.yawd.eu/2012/managing-files-with-django-yawd-elfinder-tutorial/>`_
-
+* `Tuning the yawd-elfinder Django file manager performance <http://blog.yawd.eu/2012/tuning-yawd-elfinder-django-file-manager-performan/>`_

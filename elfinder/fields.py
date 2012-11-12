@@ -84,7 +84,7 @@ class ElfinderFormField(CharField):
         """
         if isinstance(value, ElfinderFile):
             return value
-        return ElfinderFile(hash_=value, optionset=self.optionset)
+        return ElfinderFile(hash_=value, optionset=self.optionset) if value else None
     
     def clean(self, value):
         """
@@ -126,7 +126,7 @@ class ElfinderField(models.Field):
         """
         if isinstance(value, ElfinderFile):
             return value
-        return ElfinderFile(hash_=value, optionset=self.optionset)
+        return ElfinderFile(hash_=value, optionset=self.optionset) if value else None
     
     def get_prep_value(self, value):
         """
