@@ -15,7 +15,7 @@ the file URLs in your Django templates.
 connect to remote filesystems. A set of django options allows control over
 file and directory permissions, accepted mime types, max file sizes etc. 
 
-The current version is 0.90.00, use the github version for the latest fixes.
+The current version is 0.90.01, use the github version for the latest fixes.
 
 :ref:`changelog`
 

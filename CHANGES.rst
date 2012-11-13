@@ -3,6 +3,11 @@
 Changelog
 +++++++++
 
+v.0.90.01, 2012.11.07
+====================
+
+* Fixes a couple of small but important issues
+
 v.0.90.00, 2012.11.07
 ====================
 
