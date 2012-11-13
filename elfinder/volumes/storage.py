@@ -1,5 +1,8 @@
 import os, re, magic, time, tempfile, shutil, mimetypes
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 from django.core.files.storage import FileSystemStorage
 from django.core.files.base import ContentFile
 from django.core.files import File as DjangoFile

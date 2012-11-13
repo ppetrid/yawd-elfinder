@@ -1,5 +1,8 @@
 import os, datetime, mimetypes, re, inspect, time, logging
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 from base64 import b64encode, b64decode
 from string import maketrans
 from tarfile import TarFile

@@ -1,6 +1,9 @@
 import os, re, time, shutil, magic
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 from hashlib import md5
-from PIL import Image
 from django.conf import settings
 from elfinder.exceptions import ElfinderErrorMessages, NotAnImageError, DirNotFoundError
 from base import ElfinderVolumeDriver
