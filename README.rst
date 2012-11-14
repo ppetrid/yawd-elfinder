@@ -17,8 +17,6 @@ file and directory permissions, accepted mime types, max file sizes etc.
 
 The current version is 0.90.01, use the github version for the latest fixes.
 
-:ref:`changelog`
-
 .. _elfinder: http://elfinder.org
 
 Usage and demo
