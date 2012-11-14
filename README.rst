@@ -22,9 +22,8 @@ The current version is 0.90.01, use the github version for the latest fixes.
 Usage and demo
 ==============
 
-See the yawd-elfinder documentation for information on 
-`how to install the demo <http://yawd-elfinder.readthedocs.org/en/latest/installation.html#example-project>`_
-and `use yawd-elfinder <http://yawd-elfinder.readthedocs.org/en/latest/usage.html>`_.
+See the `yawd-elfinder documentation <http://yawd-elfinder.readthedocs.org/en/latest/>`_
+for information on how to install the demo and use yawd-elfinder.
 
 Screenshots
 ===========
