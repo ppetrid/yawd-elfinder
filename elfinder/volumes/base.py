@@ -366,8 +366,7 @@ class ElfinderVolumeDriver(object):
         path = self.decode(hash_)
         return {
             'path' : self._path(self.decode(hash_)),
-            'url' : '%s%s' % (self._options['URL'], self._relpath(path).replace(self._options['separator'], '/')),
-            'rootUrl' : self._options['URL'],
+            'url' : self._options['URL'],
             'tmbUrl' : self._options['tmbURL'],
             'disabled' : self._options['disabled'],
             'separator' : self._separator,
