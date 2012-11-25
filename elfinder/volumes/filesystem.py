@@ -40,13 +40,16 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         and ``MEDIA_URL`` Django settings by default.
         """
 
-        if not 'path' in opts or not opts['path']:
+        try:
+            rootpath = opts['path']
+        except KeyError:
             self._options['path'] = settings.MEDIA_ROOT
+            rootpath = settings.MEDIA_ROOT
         
         #attempt to create root if it does not exist
-        if not os.path.exists(opts['path']):
+        if not os.path.exists(rootpath):
             try:
-                os.makedirs(opts['path'])
+                os.makedirs(rootpath)
             except:
                 raise DirNotFoundError
             
