@@ -284,13 +284,13 @@ class ElfinderVolumeDriver(object):
             isdir = os.path.isdir(self._quarantine)
 
         if not self._options['quarantine'] or (isdir and not os.access(self._quarantine, os.W_OK)):
-            self._archivers['extract'] = []
+            self._archivers['extract'] = {}
             self._options['disabled'].append('extract')
         elif self._options['quarantine'] and not isdir:
             try:
                 os.mkdir(self._quarantine)
             except os.error:
-                self._archivers['extract'] = []
+                self._archivers['extract'] = {}
                 self._options['disabled'].append('extract')
         
         self._configure()
@@ -354,8 +354,8 @@ class ElfinderVolumeDriver(object):
         contains the following keys:
         
             :path:    the path to the root as it will be displayed to the end user
-            :url:    the url of file provided in the ``hash_`` argument
-            :rootUrl:    the root volume url
+            :url:    the root volume url 
+            :pathUrl:   url of the path provided in the ``hash_`` argument
             :tmbUrl:    the root thumbnail url
             :disabled:    a list of the disabled commands
             :separator:    the path separator for this volume
@@ -366,8 +366,9 @@ class ElfinderVolumeDriver(object):
         path = self.decode(hash_)
         return {
             'path' : self._path(self.decode(hash_)),
-            'url' : '%s%s' % (self._options['URL'], self._relpath(path).replace(self._options['separator'], '/')),
-            'rootUrl' : self._options['URL'],
+            'url' : self._options['URL'],
+            #this custom attribute (not part of the original response) is used to return the hash url
+            'pathUrl' : '%s%s' % (self._options['URL'], self._relpath(path).replace(self._options['separator'], '/')),
             'tmbUrl' : self._options['tmbURL'],
             'disabled' : self._options['disabled'],
             'separator' : self._separator,

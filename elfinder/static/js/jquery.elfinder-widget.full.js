@@ -127,9 +127,9 @@
 			? $('.elfinder-cwd-icon', header).addClass('tmb').css('background-image', 'url(' + file.tmb + ')')
 			: $('.elfinder-cwd-icon', header).addClass('elfinder-cwd-icon-' + file.mime.split('/').join(' elfinder-cwd-icon-'));
 		
-		var fileurl = file.url
-				? file.url
-				: file.rootUrl.replace(/\/$/,'') + '/' + file.path.split(file.separator).slice(1).join('/')
+		var fileurl = file.pathUrl
+				? file.pathUrl
+				: file.url.replace(/\/$/,'') + '/' + file.path.split(file.separator).slice(1).join('/');
 
 		var table = $('<table class="elfinder-info-tb"><tbody/></table>')
 			.append('<tr><td>' + this.options.keywords.size + ':</td><td>' + elFinder.prototype.formatSize(file.size) + '</td></tr>')

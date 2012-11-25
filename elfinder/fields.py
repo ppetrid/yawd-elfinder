@@ -51,7 +51,7 @@ class ElfinderFile(object):
         Get the file url.
         """
         info = self._get_info()
-        return info['url'] if 'url' in info else ''
+        return info['pathUrl'] if 'pathUrl' in info else ''
     
     @property
     def info(self):
