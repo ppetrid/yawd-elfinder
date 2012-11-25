@@ -79,7 +79,7 @@ class ElfinderVolumeStorage(ElfinderVolumeDriver):
                 #do not accept the storage if listdir or url are not implemented
                 try:
                     opts['storage'].listdir(self._root)
-                    rooturl = opts['storage'].url(self._root)
+                    opts['storage'].url(self._root)
                 except NotImplementedError:
                     raise Exception('Storage %s should implement both the listdir() and url() methods to be valid for use with yawd-elfinder.' % self._options['storage'].__class__)
 
