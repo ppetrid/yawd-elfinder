@@ -1405,6 +1405,7 @@ class ElfinderVolumeDriver(object):
             raise NamedError(ElfinderErrorMessages.ERROR_MOVE, self._path(src))
         
         self._clear_cached_dir(self._dirname(src))
+        self._clear_cached_stat(src)
         self._clear_cached_dir(dst)
         self._removed.append(stat)
         
