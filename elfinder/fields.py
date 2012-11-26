@@ -20,7 +20,7 @@ class ElfinderFile(object):
                 self._info = {}
             else:
                 driver = get_path_driver(self.hash, self.optionset)
-                if driver:
+                try:
                     info = driver.options(self.hash)
                     info.update(driver.file(self.hash))
                     
@@ -40,7 +40,7 @@ class ElfinderFile(object):
                         del info['extract']
                     
                     self._info = info
-                else:
+                except:
                     self._info = { 'error' : _('This file is no longer valid') }  
 
         return self._info
