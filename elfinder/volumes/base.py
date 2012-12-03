@@ -1180,7 +1180,10 @@ class ElfinderVolumeDriver(object):
                     if not 'tmb' in stat and self._can_create_tmb(path, stat):
                         stat['tmb'] = self._get_tmb(stat['target'] if 'target' in stat else path, stat)
                     if not 'dim' in stat and stat['mime'].startswith('image'):
-                        stat['dim'] = self._dimensions(path)
+                        try:
+                            stat['dim'] = self._dimensions(path)
+                        except NotAnImageError:
+                            stat['dim'] = _('Unknown')
             
             if 'alias' in stat and stat['alias'] and 'target' in stat and stat['target']:
                 stat['thash'] = self.encode(stat['target'])

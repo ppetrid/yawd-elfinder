@@ -306,7 +306,7 @@ class ElfinderConnector:
                 thumb = self._volume(target).tmb(target)
                 if thumb:
                     result['images'][target] = thumb  
-            except VolumeNotFoundError:
+            except (VolumeNotFoundError, NotAnImageError):
                 continue
 
         return result
