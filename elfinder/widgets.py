@@ -1,7 +1,7 @@
+import json
 from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.utils import simplejson as json
 from django.utils.safestring import mark_safe
 from django.utils.translation import to_locale, get_language, ugettext as _
 from fields import ElfinderFile

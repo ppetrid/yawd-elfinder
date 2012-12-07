@@ -1,8 +1,8 @@
+import json
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, Http404
 from django.utils.decorators import method_decorator
-from django.utils import simplejson as json
 from django.views.generic.base import View
 from django.views.decorators.csrf import csrf_exempt
 from exceptions import ElfinderErrorMessages

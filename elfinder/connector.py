@@ -602,7 +602,7 @@ class ElfinderConnector:
         #the content will be returned as json, so try to json encode it
         #throw an error if it cannot be properly serialized
         try:
-            from django.utils import simplejson as json
+            import json
             json.dumps(content)
         except:
             return {'error' : self.error(ElfinderErrorMessages.ERROR_NOT_UTF8_CONTENT, volume.path(target))}
