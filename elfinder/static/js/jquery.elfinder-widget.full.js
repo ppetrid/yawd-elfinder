@@ -153,7 +153,7 @@
 		var el = this.el;
 		var setkey = this.options.keywords.set;
 	
-		var set = $('<button class="button default" />')
+		var set = $('<button class="button btn btn-info default" />')
 			.click(function() {
 				elf.parent().show();
 				elf.elfinder(opts.elfinder).elfinder('show');
@@ -162,7 +162,7 @@
 		
 		this.set = set;
 		
-		this.clear = $('<button class="button default" />')
+		this.clear = $('<button class="button btn btn-danger default" />')
 			.click(function() {
 				pr.empty();
 				el.val('');
@@ -175,6 +175,8 @@
 			this.clear.attr('disabled','disabled');
 
 		$('<div/>').append(this.set, this.clear).insertAfter(this.pr);
+		this.set.after('&#xa0;');
+		
 	};
 	
 	ElfinderWidget.prototype.updateButtons = function() {
