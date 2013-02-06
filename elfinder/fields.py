@@ -77,7 +77,12 @@ class ElfinderFormField(CharField):
         #TODO: elfinder widget should be initialized using possible client options from model field declaration
         self.optionset = optionset 
         self.widget = ElfinderWidget(optionset, start_path)
-        
+
+    def prepare_value(self, value):
+        if isinstance(value, ElfinderFile):
+            return value.__unicode__()
+        return value
+
     def to_python(self, value):
         """
         Convert ``value`` to an :class:`elfinder.fields.ElfinderFile` object.
