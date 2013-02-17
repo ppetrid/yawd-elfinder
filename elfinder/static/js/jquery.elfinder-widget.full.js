@@ -7,6 +7,8 @@
  * https://github.com/Studio-42/elFinder/wiki/Client-configuration-options
  */
 
+window.jQuery_aLfinder = jQuery.noConflict();
+
 (function($) {
 	
 	var defaults = {
@@ -191,4 +193,4 @@
 	    return this.charAt(0).toUpperCase() + this.slice(1);
 	};
 
-})(jQuery);
+})(jQuery_aLfinder);
