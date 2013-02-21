@@ -39,7 +39,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
             {
                 'id' : 'lff',
                 'driver' : ElfinderVolumeLocalFileSystem,
-                'path' : join(settings.MEDIA_ROOT, 'files'),
+                'path' : join(settings.MEDIA_ROOT, u'files'),
                 'alias' : 'Elfinder files',
                 #open this path on initial request instead of root path
                 #'startPath' : '',
@@ -135,7 +135,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
             {
                 'id' : 'lffim',
                 'driver' : ElfinderVolumeLocalFileSystem,
-                'path' : join(settings.MEDIA_ROOT, 'images'),
+                'path' : join(settings.MEDIA_ROOT, u'images'),
                 'alias' : 'Elfinder images',
                 'URL' : '%simages/' % settings.MEDIA_URL,
                 'onlyMimes' : ['image',],
