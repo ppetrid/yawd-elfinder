@@ -1089,6 +1089,7 @@ class ElfinderVolumeDriver(object):
             hash_ = self._crypt(p)
             #hash is used as id in HTML that means it must contain vaild chars
             #make base64 html safe and append prefix in begining
+            hash_ = hash_.encode('utf-8') # unicode filename support
             hash_ = b64encode(hash_).translate(maketrans('+/=', '-_.'))
 
             #remove dots '.' at the end (used to be '=' in base64, before the translation)
@@ -1109,6 +1110,7 @@ class ElfinderVolumeDriver(object):
             #put cut = at the end
             h += "=" * ((4 - len(h) % 4) % 4)
             h = b64decode(h)
+            h = h.decode('utf-8') # unicode filename support
 
             path = self._uncrypt(h) 
             #append ROOT to path after it was cut in encode
