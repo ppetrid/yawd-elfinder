@@ -82,7 +82,7 @@ class ElfinderWidget(forms.HiddenInput):
                 '                keywords : { size : "%(size)s", path : "%(path)s", link : "%(link)s", modified : "%(modified)s", dimensions : "%(dimensions)s", update : "%(update)s", set : "%(set)s", clear : "%(clear)s" }'
                 '            });\n'
                 '        })\n'
-                '    })(jQuery)\n'
+                '    })(yawdelfinder.jQuery)\n'
                 '</script>' % {
                     'super' : super(ElfinderWidget, self).render(name, value, attrs),
                     'id' : attrs['id'],

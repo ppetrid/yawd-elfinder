@@ -194,3 +194,6 @@
 	};
 
 })(jQuery);
+
+var yawdelfinder = {};
+yawdelfinder.jQuery = jQuery.noConflict(true);
