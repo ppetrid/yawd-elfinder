@@ -176,7 +176,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
         """
         Attempt to read the file's mimetype
         """
-        return magic.Magic(mime=True).from_file(path)
+        return magic.Magic(mime=True).from_file(path.encode('utf-8')) #unicode filename support
     
     def _readlink(self, path):
         """
