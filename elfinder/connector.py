@@ -350,7 +350,7 @@ class ElfinderConnector:
             disp  = 'inline' if re.match('(image|text)', file_['mime'], re.IGNORECASE) or file_['mime'] == 'application/x-shockwave-flash' else 'attachment'  
             mime = file_['mime']
 
-        filenameEncoded = urllib.quote(file_['name'])
+        filenameEncoded = urllib.quote(file_['name'].encode('utf-8')) #unicode filename support
         if not '%' in filenameEncoded: #ASCII only
             filename = 'filename="%s"' % file_['name']
         elif request and hasattr(request, 'META') and 'HTTP_USER_AGENT' in request.META:
@@ -371,7 +371,7 @@ class ElfinderConnector:
             'header' : {
                 'Content-Type' : mime, 
                 'Content-Disposition' : '%s; %s' % (disp, filename),
-                'Content-Location' : file_['name'],
+                'Content-Location' : file_['name'].encode('utf-8'),  #unicode filename support
                 'Content-Transfer-Encoding' : 'binary',
                 'Content-Length' : file_['size'],
                 #'Connection' : 'close'
