@@ -30,7 +30,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
     #the default keywords demonstrates all possible configuration options
     #it allowes all file types, except from hidden files
     'default' : {
-        'debug' : False,
+        'debug' : False, #optionally set debug to True for additional debug messages
         'roots' : [ 
             #{
             #    'driver' : ElfinderVolumeLocalFileSystem,
@@ -131,6 +131,7 @@ ELFINDER_CONNECTOR_OPTION_SETS = {
     },
     #option set to only allow image files
     'image' : {
+        'debug' : False,
         'roots' : [
             {
                 'id' : 'lffim',
