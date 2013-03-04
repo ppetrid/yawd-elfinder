@@ -191,7 +191,7 @@ class ElfinderVolumeDriver(object):
         else:
             raise Exception(_('No volume id found'))
         
-        self._root = self._normpath(self._options['path'])
+        self._root = self._normpath(unicode(self._options['path']))
         self._separator = self._options['separator'] if 'separator' in self._options else os.sep
 
         #default file attribute
