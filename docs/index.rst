@@ -20,6 +20,20 @@ fields and access the file URLs in your Django templates.
 
 .. image:: django-file-manager-yawd-elfinder.jpg
 
+.. _django-versions:
+
+Django version compatibility
+++++++++++++++++++++++++++++
+
+The following yawd-elfinder versions might also work with other Django 
+releases (older or newer), however such combinations are NOT tested.
+
+| **yawd-admin v0.80.16:** `Django v.1.4.1 <https://www.djangoproject.com/m/releases/1.4/Django-1.4.1.tar.gz>`_
+| **yawd-admin v0.90.00:** `Django v.1.4.2 <https://www.djangoproject.com/m/releases/1.4/Django-1.4.2.tar.gz>`_
+| **yawd-admin v0.90.01:** `Django v.1.4.2 <https://www.djangoproject.com/m/releases/1.4/Django-1.4.2.tar.gz>`_
+| **yawd-admin v0.90.02:** `Django v.1.4.5 <https://www.djangoproject.com/m/releases/1.4/Django-1.4.5.tar.gz>`_
+
+
 Contents:
 
 .. toctree::
