@@ -3,8 +3,13 @@
 Changelog
 +++++++++
 
-v.0.90.02, ?
-============
+v.0.90.03, 2013.03.06
+=====================
+
+* Fix incorrect packaging, CRUCIAL, please update!
+
+v.0.90.02, 2013.03.06
+=====================
 
 * Added a jQuery namespace to avoid conflicts (thanks @pahaz)
 * Updated the elfinder form field to allow use outside of a model context
