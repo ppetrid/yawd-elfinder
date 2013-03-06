@@ -15,16 +15,16 @@ the file URLs in your Django templates.
 connect to remote filesystems. A set of django options allows control over
 file and directory permissions, accepted mime types, max file sizes etc. 
 
-The current version is 0.90.02, use the github version for the latest fixes.
+The current version is 0.90.03, use the github version for the latest fixes.
 
 .. note::
 	yawd-admin v0.90.03 is the last version intended to work with
 	Django 1.4. The current master is actively developed under Django 1.5
 	and does NOT work with older Django releases. For those still using
 	Django 1.4, you can checkout the ``0.90.x`` branch or use the yawd-elfinder
-	v0.90.02 pypi package. New features will not be backported to the ``0.90.x``
+	v0.90.03 pypi package. New features will not be backported to the ``0.90.x``
 	branch. Since many of us run production systems tied to Django 1.4, both
-	v0.90.02 and the latest documentation will be online on readthedocs.org. 
+	v0.90.03 and the latest documentation will be online on readthedocs.org. 
 
 .. _elfinder: http://elfinder.org
 
