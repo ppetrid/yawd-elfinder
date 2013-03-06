@@ -81,6 +81,7 @@ You can directly check if an :class:`elfinder.fields.ElfinderField` of your mode
 is empty:
 
 .. code-block:: django
+
 	{% if object.image %}..print the image..{% endif %}
 
 However, to see if an instantiated :class:`elfinder.fields.ElfinderFile` object 
