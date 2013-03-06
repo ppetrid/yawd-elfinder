@@ -18,7 +18,7 @@ file and directory permissions, accepted mime types, max file sizes etc.
 The current version is 0.90.02, use the github version for the latest fixes.
 
 .. note::
-	yawd-admin v0.90.02 is the last version intended to work with
+	yawd-admin v0.90.03 is the last version intended to work with
 	Django 1.4. The current master is actively developed under Django 1.5
 	and does NOT work with older Django releases. For those still using
 	Django 1.4, you can checkout the ``0.90.x`` branch or use the yawd-elfinder
@@ -31,7 +31,7 @@ The current version is 0.90.02, use the github version for the latest fixes.
 Usage and demo
 ==============
 
-See the `yawd-elfinder v0.90.02 documentation <http://yawd-elfinder.readthedocs.org/en/0.90.x/>`_
+See the `yawd-elfinder v0.90.03 documentation <http://yawd-elfinder.readthedocs.org/en/v0.90.03/>`_
 for information on how to install the demo and use yawd-elfinder.
 
 Screenshots
