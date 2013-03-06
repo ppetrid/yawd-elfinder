@@ -7,6 +7,7 @@ setup(
       url='http://yawd.eu/open-source-projects/yawd-elfinder/',
       version = elfinder.__version__,
       description='Elfinder-based file management solution for Django',
+      long_description=open('README.rst', 'rt').read(),
       author='yawd',
       author_email='info@yawd.eu',
       packages=find_packages(),
