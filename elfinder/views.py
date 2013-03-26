@@ -19,10 +19,6 @@ class ElfinderConnectorView(View):
         It returns a json-encoded response, unless it was otherwise requested
         by the command operation
         """
-        
-        if not settings.DEBUG and not self.request.is_ajax():
-            raise Http404
-
         kwargs = {}
         additional_headers = {}
         #create response headers
