@@ -55,6 +55,14 @@ Setup
       ...
    )
 
+.. note::
+
+	yawd-elfinder will add the ``staff_member_required`` decorator to the
+	connector view. If you wish to allow all users access the files you
+	should register the connector view manually instead of including the
+	'elfinder.urls' module.
+
+
 * **Optionally**, configure yawd-efinder :ref:`settings`
 
 Example project
