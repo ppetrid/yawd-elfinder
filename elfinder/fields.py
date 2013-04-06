@@ -3,6 +3,12 @@ from django.forms import CharField
 from django.utils.translation import ugettext as _
 from utils.volumes import get_path_driver
 
+try: #attempt to explain south how to handle the ElfinderField
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^elfinder\.fields\.ElfinderField"])
+except:
+    pass
+
 class ElfinderFile(object):
     """
     This class represents an Elfinder file.
