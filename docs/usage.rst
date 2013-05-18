@@ -103,10 +103,10 @@ The above two will both work and perform the same.
 .. note::
  
 	The :class:`elfinder.fields.ElfinderField` will
-	return ``None`` if there is no file associated to the field. Otherwise
+	return ``None`` if there is no file associated to the field. Otherwise,
 	it will always return an ElfinderFile object, even if the actual file
 	does not exist anymore (e.g. you have assigned the file and then 
-	deleted in in the file system). In that sense it is always preferred
+	deleted it in the file system). In that sense it is always preferred
 	to check the `ElfinderFile` in your templates:
 	
 	.. code-block:: django
