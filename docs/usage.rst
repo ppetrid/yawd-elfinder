@@ -84,8 +84,8 @@ is empty:
 
 	{% if object.image %}..print the image..{% endif %}
 
-However, to see if an instantiated :class:`elfinder.fields.ElfinderFile` object 
-is empty, you can check the `hash` attribute (let's assume a context variable
+To see if an :class:`elfinder.fields.ElfinderFile` object 
+is valid, you can check the `hash` attribute (let's assume a context variable
 ``elfinderfile`` holds the `ElfinderFile`):
 
 .. code-block:: django
@@ -98,11 +98,20 @@ is empty, you can check the `hash` attribute (let's assume a context variable
 
 	{% if elfinderfile.url %}..print the file..{% endif %}
 
-The above two will both work and perform the same, the only difference being that 
-the first will return an empty string, where the latter will return an empty dictionary. 
-In real-world scenarios you will never need to check against an instantiated empty
-`ElfinderFile`, since :class:`elfinder.fields.ElfinderField` will return ``None`` 
-if the field is empty.
+The above two will both work and perform the same.
+
+.. note::
+ 
+	The :class:`elfinder.fields.ElfinderField` will
+	return ``None`` if there is no file associated to the field. Otherwise
+	it will always return an ElfinderFile object, even if the actual file
+	does not exist anymore (e.g. you have assigned the file and then 
+	deleted in in the file system). In that sense it is always preferred
+	to check the `ElfinderFile` in your templates:
+	
+	.. code-block:: django
+	
+		{% if object.image.url %}..do stuff..{% endif %}
 
 Further reading
 ===============
