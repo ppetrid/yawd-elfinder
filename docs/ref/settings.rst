@@ -1,73 +1,8 @@
-.. _settings:
+.. _optionset-settings:
 
-***************
-Django settings
-***************
-
-Below is a list of settings defined by yawd-elfinder. 
-
-.. note::
-
-   You can override all of them in your project's settings file.
-   
-.. _setting-ELFINDER_JS_URLS:
-
-ELFINDER_JS_URLS
-----------------
-
-Default::
-
-   {
-      'a_jquery' : '//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js',
-      'b_jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/jquery-ui.min.js',
-      'c_elfinder' : '%selfinder/js/elfinder.full.js' % settings.STATIC_URL
-   }
-
-A dictionary containing the location of javascript files needed by 
-yawd-elfinder. 
-
-.. hint::
-
-   Say, for any example, that your project already containts a 
-   copy of jquery or query. You could use these settings to avoid loading 
-   the google-hosted versions and use your own copies.
-   
-.. _setting-ELFINDER_CSS_URLS:
-
-ELFINDER_CSS_URLS
------------------
-
-Default::
-
-   {
-    'a_jqueryui' : '//ajax.googleapis.com/ajax/libs/jqueryui/1.8.22/themes/smoothness/jquery-ui.css',
-    'b_elfinder' : '%selfinder/css/elfinder.min.css' % settings.STATIC_URL
-   }
-   
-A dictionary containing the css files included by yawd-elfinder.
-
-.. _setting-ELFINDER_LANGUAGES_ROOT_URL:
-
-ELFINDER_LANGUAGES_ROOT_URL
----------------------------
-
-Default:: ``'%selfinder/js/i18n/' % settings.STATIC_URL``
-
-The root url under which elfinder translation files are available. You can
-override this in your project's root settings 
-
-.. _setting-ELFINDER_LANGUAGES:
-
-ELFINDER_LANGUAGES
-------------------
-
-Default::
-   ['ar', 'bg', 'ca', 'cs', 'de', 'el', 'es', 'fa', 'fr', 'hu', 'it', 'jp', 'ko', 'nl', 'no', 'pl', 'pt_BR', 'ru', 'tr', 'zh_CN']
-   
-A list of the available locales. For each one of these locales, a 
-`valid elfinder translation file <https://github.com/Studio-42/elFinder/tree/2.x/js/i18n>`_ 
-must exist under the :ref:`setting-ELFINDER_LANGUAGES_ROOT_URL` url. You can
-override this setting in your project's main setting file.
+******************
+Optionset settings
+******************
 
 .. _setting-ELFINDER_CONNECTOR_OPTION_SETS:
 
@@ -81,16 +16,16 @@ this setting to define your own option sets or override the defaults.
 
 .. note::
    
-   yawd-elfinder defines two *optionsets*: ``default`` and ``image``; the first
-   being used to handle all sorts of files and the latter to allow
-   for nothing else than image files in the file manager root directory.
-   
+   yawd-elfinder defines two *optionsets*: ``default`` and ``image``;
+   the first is used to handle all sorts of files and the latter allows
+   only image files in the file manager root directory.
+
 Each *optionset* can define one of the following keys:
 
 * ``debug``: indicates if we're on debug mode: ``True`` or ``False``
- 
+
 * ``roots``: a list of root directories that elfinder will load on its instantiation. For example, the following will load both `pdfs` and `docs` directories::
-            
+
       ELFINDER_CONNECTOR_OPTION_SETS = {
          'myoptionset' : {
             'debug' : False,
@@ -154,18 +89,6 @@ startPath
 Default: ``''``
 
 Open this path on initial request instead of root path.
-
-.. _setting-URL:
-
-URL
-+++
-
-Default: ``''``
-
-The URL corresponding to the root directory (e.g. ``'http://example.com/files/'``).
-Each driver may provide a different default value or require it. For example,
-the :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-sets this to  the ``MEDIA_URL`` setting by default.
 
 .. _setting-treeDeep:
 
@@ -590,19 +513,27 @@ might be better. ``0`` seconds means that internal caching is disabled.
 	for yawd-elfinder to notice with the default value. However in typical
 	set-ups this is not an issue.
 
-*******************************
-Volume-specific django settings
-*******************************
+*****************************
+Volume-specific root settings
+*****************************
 
-Each volume driver defines a set of extra `root-wise` configuration
-options, depending on its needs.
+Each volume driver can define its own extra `root configuration
+options <setting-ELFINDER_CONNECTOR_OPTION_SETS_>`_.
 
 ElfinderVolumeLocalFileSystem additional settings
 ------------------------------------------------
 
 The :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem`
-driver defines two extra options:
- 
+driver defines three extra options:
+
+.. _setting-URL:
+
+URL
++++
+
+**Required**. The URL to the root directory
+(e.g. ``'http://example.com/files/'``).
+
 .. _setting-dirMode:
 
 dirMode
