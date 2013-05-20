@@ -55,7 +55,7 @@ driver
 **Required**. The volume driver class. yawd-elfinder currently implements the
 :class:`elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem` driver. This can be used to retrieve
 files located in your filesystem. Plans exist to implement an FTP driver
-in future releases.
+in future releases. **This can be a class or a class path string.**
 
 .. _setting-path:
 

@@ -164,21 +164,22 @@ LOGGING = {
 
 #OPTIONAL - An example of a custom option set that allows only pdf files
 #and stores them in a special 'pdf' folder
-from elfinder.volumes.filesystem import ElfinderVolumeLocalFileSystem
+from elfinder.utils.accesscontrol import fs_standard_access
 ELFINDER_CONNECTOR_OPTION_SETS = {
-    'pdfs' : {
+    'pdf' : {
         'roots' : [
             {
              'id' : 'pdfset',
-                'driver' : ElfinderVolumeLocalFileSystem,
+                'driver' : 'elfinder.volumes.filesystem.ElfinderVolumeLocalFileSystem',
                 'path' : os.path.join(MEDIA_ROOT, 'pdf'),
                 'alias' : 'PDF only',
-                'URL' : '%simages/' % MEDIA_URL,
+                'URL' : '%spdf/' % MEDIA_URL,
                 'onlyMimes' : ['application/pdf',],
                 'uploadAllow' : ['application/pdf',],
                 'uploadDeny' : ['all',],
                 'uploadMaxSize' : '128m',
                 'disabled' : ['mkfile', 'archive'],
+                'accessControl' : fs_standard_access,
                 'attributes' : [
                     {
                         'pattern' : r'\.tmb$',
