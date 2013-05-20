@@ -11,7 +11,9 @@
 		<div style="float:left; width:600px;">
 			<h1>{{object.name}}</h1>
 			{{object.content|safe}}
-			<p><a href="{{object.anyfile.url}}" target="_blank">File attachment!</a></p>
+			<p><a href="{{object.anyfile.url}}" target="_blank">File attachment!</a></p>{% if object.pdf.url %}
+			<p><a href="{{object.pdf.url}}" target="_blank">PDF attachment!</a></p>
+			{% endif %}
 		</div>
 		</div>
 	</body>
