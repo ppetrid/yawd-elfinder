@@ -1,5 +1,6 @@
 from zipfile import ZipFile
 
+
 class ZipFileArchiver(object):
     """
     An archiver used to generate .zip files.

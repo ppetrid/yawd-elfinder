@@ -1163,10 +1163,11 @@ class ElfinderVolumeDriver(object):
             stat['read'] = int(self._attr(path, 'read', stat['read']))
             stat['write'] = int(self._attr(path, 'write', stat['write']))
             stat['locked'] = int(self._attr(path, 'locked', self._is_locked(stat)))
-            stat['hidden'] = int(self._attr(path, 'hidden', self._is_hidden(stat)) and self.mime_accepted(stat['mime'])) 
-    
+            stat['hidden'] = int(self._attr(path, 'hidden', self._is_hidden(stat)) if \
+                                 self.mime_accepted(stat['mime']) else True) 
+
             if stat['read'] and not self._is_hidden(stat):
-    
+
                 if stat['mime'] == 'directory': #handle directories
                     if self._options['checkSubfolders']:
                         if 'dirs' in stat:
@@ -1186,7 +1187,7 @@ class ElfinderVolumeDriver(object):
                             stat['dim'] = self._dimensions(path)
                         except NotAnImageError:
                             stat['dim'] = _('Unknown')
-            
+
             if 'alias' in stat and stat['alias'] and 'target' in stat and stat['target']:
                 stat['thash'] = self.encode(stat['target'])
                 del stat['target']
