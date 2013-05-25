@@ -2,6 +2,16 @@
 from setuptools import setup, find_packages
 import elfinder
 
+imaging_library = list()
+try:
+    import Image
+except ImportError:
+    try:
+        from PIL import Image
+    except ImportError:
+        imaging_library.append('PIL')
+
+print imaging_library
 setup(
       name='yawd-elfinder',
       url='http://yawd.eu/open-source-projects/yawd-elfinder/',
@@ -25,7 +35,6 @@ setup(
       include_package_data = True,
       install_requires = [
         "Django>=1.5",
-        "PIL",
         "python-magic"
-        ],
+        ] + imaging_library,
 )
