@@ -2,16 +2,18 @@
 from setuptools import setup, find_packages
 import elfinder
 
+# Try to detect if we have Pillow installed.
 imaging_library = list()
 try:
-    import Image
+    import Image # PIL does this, Pillow does not.
 except ImportError:
+    # Check to see if Pillow is installed...
     try:
         from PIL import Image
     except ImportError:
-        imaging_library.append('PIL')
+        # Prefer Pillow to PIL
+        imaging_library.append('Pillow>=2.0.0')
 
-print imaging_library
 setup(
       name='yawd-elfinder',
       url='http://yawd.eu/open-source-projects/yawd-elfinder/',
