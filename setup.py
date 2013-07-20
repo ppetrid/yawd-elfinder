@@ -2,6 +2,18 @@
 from setuptools import setup, find_packages
 import elfinder
 
+# Try to detect if we have Pillow installed.
+imaging_library = list()
+try:
+    import Image # PIL does this, Pillow does not.
+except ImportError:
+    # Check to see if Pillow is installed...
+    try:
+        from PIL import Image
+    except ImportError:
+        # Prefer Pillow to PIL
+        imaging_library.append('Pillow>=2.0.0')
+
 setup(
       name='yawd-elfinder',
       url='http://yawd.eu/open-source-projects/yawd-elfinder/',
@@ -25,7 +37,6 @@ setup(
       include_package_data = True,
       install_requires = [
         "Django>=1.5",
-        "PIL",
         "python-magic"
-        ],
+        ] + imaging_library,
 )
