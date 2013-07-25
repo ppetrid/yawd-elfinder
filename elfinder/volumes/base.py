@@ -147,7 +147,7 @@ class ElfinderVolumeDriver(object):
     
     def name(self):
         """
-        Return thedriver name.
+        Return the driver name.
         """
         return self.__class__.__name__[len('elfindervolume'):].lower()
     
