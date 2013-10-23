@@ -2,12 +2,13 @@ import json
 from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.forms.widgets import Input
 from django.utils.safestring import mark_safe
 from django.utils.translation import to_locale, get_language, ugettext as _
 from fields import ElfinderFile
 from conf import settings as ls
 
-class ElfinderWidget(forms.HiddenInput):
+class ElfinderWidget(Input):    
     """
     A widget that opens the elfinder file manager for selecting a file.
     ``attrs``
@@ -17,6 +18,8 @@ class ElfinderWidget(forms.HiddenInput):
     ``optionset``
         The key of the ELFINDER_CONNECTOR_OPTION_SETS setting to use as connector settings 
     """
+    input_type = 'hidden'
+    
     def __init__(self, optionset, start_path, attrs={'size':'42'}, options={}):
         
         self.options, self.optionset, self.start_path = options, optionset, start_path
