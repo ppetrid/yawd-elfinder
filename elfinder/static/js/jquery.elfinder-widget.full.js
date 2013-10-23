@@ -192,6 +192,40 @@
 	String.prototype.capitalize = function() {
 	    return this.charAt(0).toUpperCase() + this.slice(1);
 	};
+	
+	// Activate elfinder widget on dynamically added row in inlines in admin.
+	// Thanks to etienne for the workaround, original code at:
+	// https://bitbucket.org/etienned/django-autocomplete/commits/0ec7260445d8/
+	$(window).load(function() {
+		// Get all the inlines
+	    $('.inline-group').each(function() {
+	        var inlineGroup = $(this);
+	        var elWidgets = [];
+	        // For each inlines check for elfinder input in the empty form
+	        inlineGroup.find('.empty-form .elfinder-widget').each(function() {
+	            var el = $(this);
+	            // Copy the script tag and restore the pre-elfinder state
+	            var script = el.nextAll('script');
+	            elWidgets.push(script);
+	            elfinder = el.find('input');
+	            el.before($('<input id="' + elfinder.attr('id') + '" size="' + elfinder.attr('size') + '" type="hidden" />'));	           
+	            el.nextAll().remove();
+	            el.remove();
+	        });
+	        if (elWidgets.length > 0) {
+	            inlineGroup.find('.add-row a').attr('href', '#').click(function() {
+	                // Find the current id #
+	                var num = $('#id_' + inlineGroup.attr('id').replace(/group$/, 'TOTAL_FORMS')).val() - 1;
+	                $.each(elWidgets, function() {
+	                    // Clone the script tag, add the id # and append the tag
+	                    var widget = $(this).clone();	                   
+	                    widget.text(widget.text().replace('__prefix__', num));
+	                    inlineGroup.append(widget);
+	                });
+	            });
+	        }
+	    });
+	});
 
 })(jQuery);
 
