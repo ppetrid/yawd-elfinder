@@ -44,3 +44,8 @@ The admin widget
 Elfinder in action
 
 .. image:: http://static.yawd.eu/www/yawd-elfinder-rotate.jpg 
+
+.. image:: https://d2weczhvl823v0.cloudfront.net/yawd/yawd-elfinder/trend.png
+   :alt: Bitdeli badge
+   :target: https://bitdeli.com/free
+
