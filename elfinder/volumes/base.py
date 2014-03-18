@@ -555,6 +555,8 @@ class ElfinderVolumeDriver(object):
         
         try:
             im = self._openimage(path)
+            if im.mode == "CMYK":
+                im = im.convert("RGB")
             s = im.size
         except:
             raise NotAnImageError

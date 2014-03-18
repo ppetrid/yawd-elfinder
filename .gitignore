@@ -6,3 +6,4 @@
 /tests
 /build
 /example_project.db
+/*.pyc
