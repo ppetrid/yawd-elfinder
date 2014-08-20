@@ -521,7 +521,7 @@ class ElfinderConnector:
             html = int(html)
         
         header = { 'Content-Type' : 'text/html; charset=utf-8' } if html else {}
-        result = { 'added' : [], 'header' : header }
+        result = { 'added' : [], 'header' : header, 'force_json_content' : True if html else False }
 
         try:
             files = FILES.getlist('upload[]')

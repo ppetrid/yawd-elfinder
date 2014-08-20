@@ -41,7 +41,7 @@ class ElfinderConnectorView(View):
             context['volume'].close(context['pointer'], context['info']['hash'])
         elif 'raw' in context and context['raw'] and 'error' in context and context['error']: #raw error, return only the error list
             kwargs['content'] = context['error']
-        elif kwargs['content_type'] == 'application/json': #return json
+        elif context.pop('force_json_content', False) or kwargs['content_type'] == 'application/json': #return json
             kwargs['content'] = json.dumps(context)
         else: #return context as is!
             kwargs['content'] = context
