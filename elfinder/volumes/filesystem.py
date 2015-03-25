@@ -114,7 +114,7 @@ class ElfinderVolumeLocalFileSystem(ElfinderVolumeDriver):
                 return n
             i+=1
 
-        return name+md5(dir_)+ext
+        return name+md5(dir_).hexdigest()+ext
 
     #************************* file/dir info *********************#
 
